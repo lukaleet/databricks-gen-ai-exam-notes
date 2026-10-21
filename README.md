@@ -7,6 +7,7 @@ An interactive study guide for the **Databricks Certified Generative AI Engineer
 
 | What | Where |
 |---|---|
+| 📅 28-day plan as a checklist (dates can be aligned to your exam date, with a "Today" view on the dashboard) | [`plan/daily-plan.yaml`](plan/daily-plan.yaml) and the site's *Daily plan* |
 | 📚 Study notes for every exam objective (6 sections + exam overview + study plan) | [`notes/`](notes/) and the site |
 | ✍️ 165 exam-style questions (single & multiple-selection) with explanations | [`questions/`](questions/) and the site's *Practice* page |
 | ⏱️ Timed mock exams: 45 questions, 90 minutes, weighted by section | Site → *Mock exam* |

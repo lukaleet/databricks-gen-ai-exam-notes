@@ -6,6 +6,8 @@ weight: 0
 
 # Study plan
 
+> **Want a day-by-day version?** Open the [Daily plan](#/plan) for a 28-day checklist with links to every note, lab, quiz and scenario.
+
 Work backwards from your exam date in **2-week sprints** (adapted from the Databricks AI Prep Guide).
 
 | Phase | Share of your time | What to do here |

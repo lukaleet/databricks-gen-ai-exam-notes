@@ -17,9 +17,10 @@
 
   /* ---------------- persistent state (per browser) ---------------- */
   const KEY = "gaiexam.v1";
-  const defaults = () => ({ hist: {}, obj: {}, flash: {}, labs: {}, mocks: [], examDate: "", theme: "", mockActive: null });
+  const defaults = () => ({ hist: {}, obj: {}, flash: {}, labs: {}, mocks: [], examDate: "", theme: "", mockActive: null, plan: { start: "", done: {} } });
   let S = defaults();
   try { S = Object.assign(defaults(), JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) { /* storage unavailable */ }
+  S.plan = Object.assign({ start: "", done: {} }, S.plan);
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ } };
 
   function record(q, correct) {
@@ -61,6 +62,7 @@
     const secLinks = SECTION_IDS.map((sid) => link(`#/notes/${sid}`, `§${sid.slice(1)} ${esc(E.sections[sid].name)}`, `<span class="pct">${sectionStats(sid).mastery}%</span>`)).join("");
     document.getElementById("nav").innerHTML = `
       ${link("#/", "🏠 Dashboard")}
+      ${link("#/plan", "📅 Daily plan", `<span class="pct">${planProgress().pct}%</span>`)}
       ${link("#/notes/plan", "🗓️ Study plan & checklist")}
       ${link("#/notes/overview", "⚠️ Exam overview & renames")}
       <div class="group">Study notes</div>${secLinks}
@@ -84,7 +86,7 @@
 
   const routes = {
     "": viewHome, notes: viewNotes, practice: viewPractice, mock: viewMock, scenarios: viewScenarios,
-    review: viewReview, flashcards: viewFlashcards, glossary: viewGlossary, labs: viewLabs, settings: viewSettings,
+    plan: viewPlan, review: viewReview, flashcards: viewFlashcards, glossary: viewGlossary, labs: viewLabs, settings: viewSettings,
   };
 
   function render() {
@@ -153,6 +155,83 @@
   const isCorrect = (q, sel) => sel.length === q.answer.length && sel.every((s) => q.answer.includes(s));
   const makeItem = (q) => ({ id: q.id, order: shuffle(q.options.map((_, i) => i)) });
 
+  /* ---------------- daily plan ---------------- */
+  const PLAN_DAYS = E.plan.flatMap((w) => w.days);
+  function planProgress() {
+    const tasks = PLAN_DAYS.flatMap((d) => d.tasks);
+    const done = tasks.filter((t) => S.plan.done[t.id]).length;
+    return { done, total: tasks.length, pct: pct(done, tasks.length) };
+  }
+  const dayDone = (d) => d.tasks.every((t) => S.plan.done[t.id]);
+  // Today's day number from the start date (1-based), or null without a start date.
+  function planToday() {
+    if (!S.plan.start) return null;
+    const diff = Math.floor((new Date().setHours(0, 0, 0, 0) - new Date(S.plan.start + "T00:00:00")) / 864e5);
+    return diff + 1;
+  }
+  // The day to focus on: today's scheduled day if set, else the first unfinished day.
+  function focusDay() {
+    const t = planToday();
+    if (t !== null) return PLAN_DAYS.find((d) => d.day === Math.min(Math.max(t, 1), PLAN_DAYS.length));
+    return PLAN_DAYS.find((d) => !dayDone(d)) || PLAN_DAYS[PLAN_DAYS.length - 1];
+  }
+  const dayDate = (n) => {
+    if (!S.plan.start) return "";
+    const d = new Date(S.plan.start + "T00:00:00"); d.setDate(d.getDate() + n - 1);
+    return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  };
+  function taskHtml(t) {
+    const label = t.link ? `<a href="${esc(t.link)}" ${t.external ? 'target="_blank" rel="noopener"' : ""}>${esc(t.text)}${t.external ? " ↗" : ""}</a>` : esc(t.text);
+    return `<li><label><input type="checkbox" data-task="${esc(t.id)}" ${S.plan.done[t.id] ? "checked" : ""}><span>${label}</span></label></li>`;
+  }
+  function bindTasks(root, onChange) {
+    root.querySelectorAll("[data-task]").forEach((cb) => (cb.onchange = () => {
+      cb.checked ? (S.plan.done[cb.dataset.task] = true) : delete S.plan.done[cb.dataset.task];
+      save(); onChange && onChange();
+    }));
+  }
+  function viewPlan() {
+    const today = planToday(), focus = focusDay(), prog = planProgress();
+    let behind = "";
+    if (today !== null) {
+      const late = PLAN_DAYS.filter((d) => d.day < today && !dayDone(d));
+      if (today > PLAN_DAYS.length) behind = `<div class="callout">The plan's 28 days are over. Keep doing mocks and reviewing mistakes until exam day.</div>`;
+      else if (late.length) behind = `<div class="callout warn">${late.length} earlier day${late.length > 1 ? "s" : ""} still have open tasks (${late.map((d) => "day " + d.day).join(", ")}). Catch up or shift your start date.</div>`;
+    }
+    app.innerHTML = `<h1>Daily plan</h1>
+      <p class="sub">28 days at ~60–90 min/day. Tick tasks as you finish them. Your progress is saved in this browser.</p>
+      <div class="card">
+        <div class="row"><b>${prog.done} / ${prog.total} tasks</b><span class="spacer"></span><span class="muted">${prog.pct}%</span></div>
+        <div class="bar" style="margin:8px 0 12px"><span style="width:${prog.pct}%"></span></div>
+        <div class="row">
+          <label for="plan-start">Start date</label><input type="date" id="plan-start" value="${esc(S.plan.start)}">
+          ${S.examDate ? `<button class="btn small" id="align">Align so day 28 = exam date (${esc(S.examDate)})</button>` : `<span class="muted" style="font-size:13px">Set your exam date on the <a href="#/">dashboard</a> to align the plan to it.</span>`}
+          ${S.plan.start ? `<button class="btn small" id="clear-start">Clear date</button>` : ""}
+        </div>
+        <div class="label" style="margin-top:8px">${today === null ? "No start date: the plan highlights your first unfinished day." : today < 1 ? `Plan starts in ${1 - today} day(s).` : `Today is <b>day ${Math.min(today, PLAN_DAYS.length)}</b>.`}</div>
+      </div>
+      ${behind}
+      ${E.plan.map((w) => `<h2>${esc(w.title)}</h2>${w.days.map((d) => {
+        const isFocus = d === focus, done = dayDone(d), n = d.tasks.filter((t) => S.plan.done[t.id]).length;
+        return `<div class="card" id="day-${d.day}" style="${isFocus ? "border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)" : ""}">
+          <div class="row"><b>Day ${d.day}</b><span>${esc(d.title)}</span>${isFocus ? `<span class="tag accent">${today !== null && today >= 1 && today <= PLAN_DAYS.length ? "Today" : "Up next"}</span>` : ""}<span class="spacer"></span>
+          <span class="muted" style="font-size:13px">${dayDate(d.day)}</span><span class="tag" style="${done ? "color:var(--ok)" : ""}">${done ? "✔ done" : n + "/" + d.tasks.length}</span></div>
+          <ul class="objectives" style="padding-left:0;margin:8px 0 0">${d.tasks.map(taskHtml).join("")}</ul></div>`;
+      }).join("")}`).join("")}
+      <div class="row" style="margin-top:16px"><button class="btn" id="reset-plan" style="color:var(--bad)">Untick all plan tasks</button></div>`;
+    bindTasks(app, () => { renderNav(parseRoute()); const y = window.scrollY; viewPlanRefresh(y); });
+    const startEl = document.getElementById("plan-start");
+    startEl.onchange = () => { S.plan.start = startEl.value; save(); render(); };
+    const align = document.getElementById("align");
+    align && (align.onclick = () => { const d = new Date(S.examDate + "T00:00:00"); d.setDate(d.getDate() - (PLAN_DAYS.length - 1)); S.plan.start = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; save(); render(); });
+    const clr = document.getElementById("clear-start");
+    clr && (clr.onclick = () => { S.plan.start = ""; save(); render(); });
+    document.getElementById("reset-plan").onclick = () => { if (confirm("Untick all daily-plan tasks?")) { S.plan.done = {}; save(); render(); } };
+    const el = document.getElementById("day-" + focus.day);
+    if (el && focus.day > 1) setTimeout(() => el.scrollIntoView({ block: "start" }), 0);
+  }
+  function viewPlanRefresh(y) { app.innerHTML = ""; viewPlan(); setTimeout(() => window.scrollTo(0, y), 0); }
+
   /* ---------------- dashboard ---------------- */
   function viewHome() {
     const all = sectionStats();
@@ -168,6 +247,7 @@
       <h1>Databricks Generative AI Engineer Associate</h1>
       <p class="sub">An interactive prep guide for the <b>exam version published March 18, 2026</b>. It has notes per objective, ${E.questions.length} practice questions, weighted 45-question mock exams, design scenarios, flashcards and ${E.labs.length} hands-on Databricks labs.</p>
       <div class="callout warn"><b>Naming trap:</b> several products were renamed after the exam was written (Vector Search → AI Search, AI Gateway → Unity Gateway, Genie Spaces → Genie Agents…). The exam uses the March 2026 names. <a href="#/notes/overview">See the full table →</a></div>
+      <div id="today-card"></div>
       <div class="grid">
         <div class="card"><div class="label">Question mastery</div><div class="stat">${all.mastery}%</div><div class="bar" style="margin-top:8px"><span style="width:${all.mastery}%"></span></div><div class="label" style="margin-top:6px">${all.mastered} of ${all.total} answered correctly last time · ${all.seen} seen</div></div>
         <div class="card"><div class="label">Mock exams</div><div class="stat">${mocks.length}</div><div class="label">${best === null ? "none yet" : `best ${best}% · last ${pct(mocks[mocks.length - 1].score, mocks[mocks.length - 1].total)}%`}</div></div>
@@ -198,6 +278,15 @@
         <li><b>Simulate:</b> timed mock exams in the final weeks. Aim for a steady ≥ 80%.</li>
       </ol>`;
     document.getElementById("exam-date").addEventListener("change", (e) => { S.examDate = e.target.value; save(); render(); });
+    const drawToday = () => {
+      const d = focusDay(), today = planToday(), prog = planProgress(), box = document.getElementById("today-card");
+      const label = today !== null && today >= 1 && today <= PLAN_DAYS.length ? "Today" : "Up next";
+      box.innerHTML = `<div class="card" style="border-color:var(--accent)">
+        <div class="row"><b>📅 ${label}: Day ${d.day}</b><span>${esc(d.title)}</span><span class="spacer"></span><a class="btn small" href="#/plan">Full plan (${prog.pct}%)</a></div>
+        <ul class="objectives" style="padding-left:0;margin:8px 0 0">${d.tasks.map(taskHtml).join("")}</ul></div>`;
+      bindTasks(box, () => { renderNav(parseRoute()); drawToday(); });
+    };
+    drawToday();
   }
 
   /* ---------------- notes ---------------- */

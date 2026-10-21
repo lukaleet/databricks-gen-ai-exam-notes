@@ -1,0 +1,160 @@
+# 28-day plan (~60-90 min/day). Each task: text + optional link (site hash route or lab file).
+weeks:
+  - title: "Day 1: Orient & diagnose"
+    days:
+      - day: 1
+        title: Orient & diagnose (no studying yet)
+        tasks:
+          - {text: "Read Exam overview & renames, and memorize the naming table", link: "#/notes/overview"}
+          - {text: "Create a Databricks Free Edition account and run Lab 00", link: "lab:00_setup.py"}
+          - {text: "Diagnostic: 10-question practice quiz for EACH section (no notes)", link: "#/practice"}
+          - {text: "Write down your 2-3 weakest sections"}
+  - title: "Week 1: Data & design foundations (§1 + §2 = 28%)"
+    days:
+      - day: 2
+        title: Prompts & model tasks
+        tasks:
+          - {text: "Notes §1, sections 1.1-1.3", link: "#/notes/d1"}
+          - {text: "Lab 01: prompt engineering & structured output", link: "lab:01_prompt_engineering.py"}
+      - day: 3
+        title: Tools, agents & Agent Bricks
+        tasks:
+          - {text: "Notes §1, sections 1.4-1.6", link: "#/notes/d1"}
+          - {text: "Practice §1 (10 questions)", link: "#/practice?s=d1&go=1"}
+      - day: 4
+        title: Chunking, parsing, Delta + CDF
+        tasks:
+          - {text: "Notes §2, sections 2.1-2.4", link: "#/notes/d2"}
+          - {text: "Lab 02: parse, clean, chunk → Delta table", link: "lab:02_data_prep_chunking.py"}
+      - day: 5
+        title: Retrieval evaluation & reranking
+        tasks:
+          - {text: "Notes §2, sections 2.5-2.8", link: "#/notes/d2"}
+          - {text: "Lab 03: Vector Search index (Steps 1-3)", link: "lab:03_vector_search.py"}
+      - day: 6
+        title: Retrieval metrics hands-on
+        tasks:
+          - {text: "Lab 03: Steps 4-5 (precision/recall/MRR, index sync)", link: "lab:03_vector_search.py"}
+          - {text: "Practice §2 (10 questions)", link: "#/practice?s=d2&go=1"}
+          - {text: "Scenario: E-commerce Product Search", link: "#/scenarios/s2"}
+      - day: 7
+        title: Light review
+        tasks:
+          - {text: "Flashcards §1", link: "#/flashcards?s=d1"}
+          - {text: "Flashcards §2", link: "#/flashcards?s=d2"}
+          - {text: "Review mistakes", link: "#/review"}
+  - title: "Week 2: Application development (§3 = 30%)"
+    days:
+      - day: 8
+        title: Frameworks, prompts, guardrails
+        tasks:
+          - {text: "Notes §3, sections 3.1-3.6", link: "#/notes/d3"}
+      - day: 9
+        title: Choosing LLMs, embeddings & metrics
+        tasks:
+          - {text: "Notes §3, sections 3.7-3.10", link: "#/notes/d3"}
+          - {text: "Practice §3 (10 questions)", link: "#/practice?s=d3&go=1"}
+      - day: 10
+        title: Agent Framework & ResponsesAgent
+        tasks:
+          - {text: "Notes §3, sections 3.11-3.13", link: "#/notes/d3"}
+          - {text: "Lab 04: RAG agent, trace, log, register", link: "lab:04_rag_agent_responses_agent.py"}
+      - day: 11
+        title: Tools, MCP & Genie
+        tasks:
+          - {text: "Lab 07: UC function tools & managed MCP", link: "lab:07_tools_uc_functions_mcp.py"}
+          - {text: "UI: build a Genie space over a table and ask 3 questions"}
+      - day: 12
+        title: Section 3 drill
+        tasks:
+          - {text: "Practice §3 (20 questions)", link: "#/practice?s=d3"}
+          - {text: "Scenario: HR Policy Assistant", link: "#/scenarios/s1"}
+          - {text: "Scenario: Sales + Policy Multi-Agent Assistant", link: "#/scenarios/s3"}
+      - day: 13
+        title: pyfunc chains
+        tasks:
+          - {text: "Lab 10: pyfunc chain with pre/post-processing", link: "lab:10_pyfunc_chain.py"}
+          - {text: "UI: compare 2 models side by side in AI Playground"}
+      - day: 14
+        title: Light review
+        tasks:
+          - {text: "Flashcards §3", link: "#/flashcards?s=d3"}
+          - {text: "Review mistakes", link: "#/review"}
+  - title: "Week 3: Deploy, govern, evaluate (§4 + §5 + §6 = 42%)"
+    days:
+      - day: 15
+        title: Vector Search config, FM APIs, ai_query
+        tasks:
+          - {text: "Notes §4, sections 4.1-4.6", link: "#/notes/d4"}
+      - day: 16
+        title: Memory, CI/CD, MCP, Apps, auth
+        tasks:
+          - {text: "Notes §4, sections 4.7-4.12", link: "#/notes/d4"}
+          - {text: "Lab 06: Prompt Registry, aliases & rollback", link: "lab:06_prompt_registry.py"}
+      - day: 17
+        title: Section 4 drill
+        tasks:
+          - {text: "Practice §4 (20 questions)", link: "#/practice?s=d4"}
+          - {text: "Scenario: Prompt & Model Promotion Pipeline", link: "#/scenarios/s6"}
+          - {text: "Scenario: Research Assistant with MCP Tools", link: "#/scenarios/s7"}
+      - day: 18
+        title: Governance
+        tasks:
+          - {text: "Notes §5", link: "#/notes/d5"}
+          - {text: "Lab 08: ai_query, ai_mask, column masks & row filters", link: "lab:08_batch_ai_query_governance.py"}
+          - {text: "Practice §5 (10 questions)", link: "#/practice?s=d5&go=1"}
+      - day: 19
+        title: Evaluation with MLflow 3
+        tasks:
+          - {text: "Notes §6", link: "#/notes/d6"}
+          - {text: "Lab 05: judges, @scorer, make_judge", link: "lab:05_evaluation_scorers.py"}
+      - day: 20
+        title: Deployment & monitoring
+        tasks:
+          - {text: "Lab 09: agents.deploy, gateway, inference tables, monitoring", link: "lab:09_deploy_monitor_gateway.py"}
+          - {text: "Practice §6 (10 questions)", link: "#/practice?s=d6&go=1"}
+          - {text: "Scenario: Invoice Processing at Scale", link: "#/scenarios/s4"}
+          - {text: "Scenario: Customer Support Chatbot Launch", link: "#/scenarios/s5"}
+      - day: 21
+        title: Light review
+        tasks:
+          - {text: "Flashcards §4", link: "#/flashcards?s=d4"}
+          - {text: "Flashcards §5", link: "#/flashcards?s=d5"}
+          - {text: "Flashcards §6", link: "#/flashcards?s=d6"}
+          - {text: "Review mistakes", link: "#/review"}
+  - title: "Week 4: Simulate & repair"
+    days:
+      - day: 22
+        title: Mock exam 1
+        tasks:
+          - {text: "Mock exam under real conditions (90 min, no notes)", link: "#/mock"}
+      - day: 23
+        title: Repair
+        tasks:
+          - {text: "Reread the notes for every objective you missed in the mock"}
+          - {text: "Practice: 'Missed last time only'", link: "#/review"}
+      - day: 24
+        title: Mock exam 2
+        tasks:
+          - {text: "Mock exam #2", link: "#/mock"}
+          - {text: "Repair your misses", link: "#/review"}
+      - day: 25
+        title: Hands-on gaps
+        tasks:
+          - {text: "Redo any hands-on checklist items you're shaky on", link: "#/labs"}
+      - day: 26
+        title: Mock exam 3
+        tasks:
+          - {text: "Mock exam #3 (target ≥ 80%)", link: "#/mock"}
+          - {text: "Repair your misses", link: "#/review"}
+      - day: 27
+        title: Final review
+        tasks:
+          - {text: "Naming traps table one more time", link: "#/notes/overview"}
+          - {text: "§4 Vector Search configuration table (standard vs storage-optimized)", link: "#/notes/d4"}
+          - {text: "Flashcards: all sections", link: "#/flashcards"}
+          - {text: "Re-check the official exam guide for changes"}
+      - day: 28
+        title: Rest / exam day
+        tasks:
+          - {text: "Rest, or one short practice set. Good luck!"}

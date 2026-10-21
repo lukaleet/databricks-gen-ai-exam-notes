@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build docs/data/content.js from notes/*.md, questions/*.yaml, scenarios/*.yaml and labs/*.py.
+"""Build docs/data/content.js from notes/*.md, questions/*.yaml, scenarios/*.yaml, plan/*.yaml and labs/*.py.
 
 Usage:  python3 scripts/build.py          (requires: pip install pyyaml markdown)
 Validates every question (answer letters, unique ids, "Which TWO" counts) and fails loudly.
@@ -95,6 +95,29 @@ def build_labs():
     return labs
 
 
+def build_plan(labs, scenarios):
+    data = yaml.safe_load(open(os.path.join(ROOT, "plan", "daily-plan.yaml"), encoding="utf-8"))
+    lab_urls = {l["file"]: l["url"] for l in labs}
+    scen_ids = {s["id"] for s in scenarios}
+    days_seen = []
+    for week in data["weeks"]:
+        for d in week["days"]:
+            days_seen.append(d["day"])
+            for i, t in enumerate(d["tasks"]):
+                t["id"] = f"day{d['day']}-{i}"
+                link = t.get("link", "")
+                if link.startswith("lab:"):
+                    if link[4:] not in lab_urls:
+                        errors.append(f"plan day {d['day']}: unknown lab {link}")
+                    t["link"], t["external"] = lab_urls.get(link[4:], ""), True
+                m = re.match(r"#/scenarios/(\w+)", link)
+                if m and m.group(1) not in scen_ids:
+                    errors.append(f"plan day {d['day']}: unknown scenario {link}")
+    if days_seen != list(range(1, len(days_seen) + 1)):
+        errors.append("plan days must be numbered 1..N in order")
+    return data["weeks"]
+
+
 def main():
     content = {
         "sections": SECTIONS,
@@ -105,6 +128,7 @@ def main():
         "labs": build_labs(),
         "repo": REPO_URL,
     }
+    content["plan"] = build_plan(content["labs"], content["scenarios"])
     for sid, s in SECTIONS.items():
         n = sum(q["section"] == sid for q in content["questions"])
         if n < s["mock"]:
@@ -117,7 +141,8 @@ def main():
         f.write("window.EXAM = " + json.dumps(content, ensure_ascii=False) + ";\n")
     print(f"OK: {len(content['notes'])} notes, {len(content['questions'])} questions, "
           f"{len(content['scenarios'])} scenarios, {len(content['glossary'])} terms, "
-          f"{len(content['labs'])} labs -> {os.path.relpath(out, ROOT)}")
+          f"{len(content['labs'])} labs, {sum(len(w['days']) for w in content['plan'])}-day plan "
+          f"-> {os.path.relpath(out, ROOT)}")
 
 
 if __name__ == "__main__":
