@@ -1,0 +1,235 @@
+section: d1
+questions:
+  - id: d1-01
+    objective: Design a prompt that elicits a specifically formatted response
+    q: A Generative AI Engineer needs an LLM served through Foundation Model APIs to return product attributes as JSON that a downstream service parses without errors. Which approach gives the STRONGEST guarantee that the output matches the required schema?
+    options:
+      - Add "Respond in JSON" at the end of the user message
+      - Use the endpoint's structured output (response_format with a JSON schema)
+      - Increase temperature so the model explores more valid formats
+      - Ask the model to wrap JSON in markdown code fences and strip them later
+    answer: [B]
+    explain: Structured outputs constrain decoding to a JSON schema, which is stronger than instructions or few-shot examples. Higher temperature makes output less consistent. Code fences don't make the JSON valid.
+
+  - id: d1-02
+    objective: Design a prompt that elicits a specifically formatted response
+    q: An extraction prompt sometimes returns extra explanatory sentences before the JSON object. Which TWO changes are most likely to fix this?
+    options:
+      - Provide few-shot examples that show only the JSON object as output
+      - Raise max_tokens to 4000
+      - Explicitly instruct "Return only the JSON object, with no additional text" and lower the temperature
+      - Move the instructions to the end of the retrieved context with no delimiters
+      - Switch to a larger embedding model
+    answer: [A, C]
+    explain: Few-shot examples and explicit output instructions with a low temperature both make the format consistent. max_tokens and embedding models don't affect format, and removing delimiters makes things worse.
+
+  - id: d1-03
+    objective: Design a prompt that elicits a specifically formatted response
+    q: Which prompt element tells the model what shape its answer should take?
+    options:
+      - Context
+      - Output indicator / format specification
+      - Stop sequence
+      - Embedding
+    answer: [B]
+    explain: The output indicator (format specification) describes the expected response structure, such as JSON keys, bullet points or length.
+
+  - id: d1-04
+    objective: Design a prompt that elicits a specifically formatted response
+    q: A RAG assistant should avoid inventing answers when the retrieved documents do not contain the information. What is the best prompt instruction?
+    options:
+      - '"Always provide an answer, even if you must guess."'
+      - '"Answer only using the provided context. If the answer is not in the context, say you don''t know."'
+      - '"Use your general knowledge first, then the context."'
+      - '"Be creative and comprehensive."'
+    answer: [B]
+    explain: Restricting the model to the context and giving it an explicit fallback reduces hallucinations.
+
+  - id: d1-05
+    objective: Select model tasks to accomplish a given business requirement
+    q: A company wants to automatically route incoming support emails to one of five teams. Which model task best fits?
+    options:
+      - Summarization
+      - Text classification
+      - Translation
+      - Text-to-image generation
+    answer: [B]
+    explain: Assigning one of a fixed set of labels is a classification task. ai_classify or a small LLM with a classification prompt works well.
+
+  - id: d1-06
+    objective: Select model tasks to accomplish a given business requirement
+    q: Legal needs vendor name, contract start date and renewal terms pulled from thousands of PDF contracts into a table. Which task category is this?
+    options:
+      - Sentiment analysis
+      - Information extraction
+      - Summarization
+      - Semantic similarity
+    answer: [B]
+    explain: Pulling specific fields from unstructured text into a structured schema is information or entity extraction. On Databricks, use Agent Bricks Information Extraction or ai_extract.
+
+  - id: d1-07
+    objective: Select model tasks to accomplish a given business requirement
+    q: An e-commerce team wants "customers who viewed this also might like" recommendations based on product description meaning, not keywords. Which capability is central?
+    options:
+      - Embeddings and semantic similarity search
+      - Text summarization
+      - Named entity recognition
+      - Text-to-SQL
+    answer: [A]
+    explain: Finding items with similar meaning means embedding the descriptions and running a nearest-neighbour similarity search, for example with Vector Search.
+
+  - id: d1-08
+    objective: Select model tasks to accomplish a given business requirement
+    q: A requirement says "Every night, generate a short summary of each of the 2 million new customer reviews and store it in a table." What is the most appropriate design?
+    options:
+      - A real-time chatbot on Databricks Apps
+      - A batch job using ai_query() or ai_summarize() over the reviews table
+      - A Multi-Agent Supervisor with a Genie space
+      - Fine-tune a model so it memorizes all reviews
+    answer: [B]
+    explain: This is a batch workload with no interactive user, so SQL AI Functions like ai_query or ai_summarize in a scheduled job are the right fit.
+
+  - id: d1-09
+    objective: Select chain components for a desired model input and output
+    q: A chain takes a user question, must answer from internal manuals, and must return a Python dict with keys "answer" and "sources". Which set of components is needed?
+    options:
+      - Prompt template, LLM, output parser
+      - Retriever, prompt template, LLM, output parser
+      - Embedding model, LLM
+      - Retriever, LLM
+    answer: [B]
+    explain: Answering from manuals needs a retriever. The prompt template combines the context and the question, the LLM generates, and the output parser enforces the dict structure.
+
+  - id: d1-10
+    objective: Select chain components for a desired model input and output
+    q: A chatbot must answer "Where is my order?" for logged-in customers. Order status lives in an operational table that updates every few minutes. Which component should provide the order status?
+    options:
+      - A vector search index over shipping policy documents
+      - A tool or structured lookup (e.g. UC function or online table) keyed on order_id
+      - Fine-tuning the LLM weekly on order data
+      - A longer system prompt listing typical delivery times
+    answer: [B]
+    explain: Per-entity facts that change often should come from a structured lookup or tool, not from vector search over policy docs or from fine-tuning.
+
+  - id: d1-11
+    objective: Translate business use case goals into a description of the desired inputs and outputs for the AI pipeline
+    q: A sales manager asks for "an assistant that tells me how my region performed last quarter." Which pipeline description best captures inputs and outputs?
+    options:
+      - 'Input: free-text question plus the user''s region from their identity; Output: a natural-language answer with the supporting numbers from governed sales tables'
+      - 'Input: PDF sales reports; Output: an embedding vector'
+      - 'Input: nothing; Output: a static dashboard'
+      - 'Input: free-text question; Output: a fine-tuned model'
+    answer: [A]
+    explain: A good I/O definition names the user input, the context to inject (region), the data source (governed tables, e.g. through Genie) and the output format.
+
+  - id: d1-12
+    objective: Translate business use case goals into a description of the desired inputs and outputs for the AI pipeline
+    q: A customer-facing app requires users to enter account_id and transaction_id. It answers billing questions well but fails on expected arrival dates. What is the best fix?
+    options:
+      - Add shipping policy documents to the vector store
+      - Serve delivery dates from a structured table keyed on transaction_id and pass them into the prompt or tool
+      - Tell the model to add 10 days to the order date
+      - Fine-tune the model monthly on shipping data
+    answer: [B]
+    explain: Expected arrival dates are structured facts per transaction. Look them up by key, for example from a feature or online table or a tool. Don't guess from policies and don't fine-tune.
+
+  - id: d1-13
+    objective: Define and order tools that gather knowledge or take actions for multi-stage reasoning
+    q: An agent must refund a customer's most recent order if it qualifies under the refund policy. Which tool order is most appropriate?
+    options:
+      - issue_refund → get_latest_order → check_refund_policy
+      - get_customer → get_latest_order → check_refund_policy → issue_refund (after confirmation)
+      - check_refund_policy → issue_refund → get_customer
+      - issue_refund only, since the LLM can infer the rest
+    answer: [B]
+    explain: Gather knowledge first (identify customer, order, policy), validate, and only then take the irreversible action, ideally with confirmation.
+
+  - id: d1-14
+    objective: Define and order tools that gather knowledge or take actions for multi-stage reasoning
+    q: An agent often calls the wrong tool among 25 available tools. Which TWO actions most improve tool selection?
+    options:
+      - Write clear, distinct tool names and descriptions with typed parameters
+      - Split tools across specialized sub-agents behind a supervisor
+      - Remove all tool descriptions to shorten the prompt
+      - Increase temperature to 1.5
+      - Give every tool the same generic name "tool"
+    answer: [A, B]
+    explain: LLMs pick tools by name and description. Clear descriptions and fewer tools per agent (multi-agent routing) both improve selection.
+
+  - id: d1-15
+    objective: Define and order tools that gather knowledge or take actions for multi-stage reasoning
+    q: Which statement best describes the ReAct agent pattern?
+    options:
+      - The model is fine-tuned with reinforcement learning on actions
+      - The model alternates reasoning steps with tool calls, observing tool results until it can answer
+      - The model retrieves documents once and answers
+      - The model only reacts to user feedback after deployment
+    answer: [B]
+    explain: ReAct is Reason → Act (call a tool) → Observe the result → repeat. It's the basis of most tool-calling agents.
+
+  - id: d1-16
+    objective: Define and order tools that gather knowledge or take actions for multi-stage reasoning
+    q: Which is the most governed, reusable way to provide a "lookup customer tier" tool to several agents on Databricks?
+    options:
+      - Copy-paste a Python function into every agent notebook
+      - Register it as a Unity Catalog function and expose it as a tool (directly or via the managed MCP server)
+      - Hard-code the tier table in the system prompt
+      - Store the logic in a CSV in DBFS
+    answer: [B]
+    explain: UC functions are governed (permissions, lineage), discoverable and reusable across agents and frameworks, including through the managed MCP server for UC functions.
+
+  - id: d1-17
+    objective: Determine how and when to use Agent Bricks to solve problems
+    q: HR wants a chatbot over 3,000 policy PDFs stored in a Unity Catalog volume. It must answer with citations, be delivered quickly with minimal code, and improve from HR expert feedback. Which option fits best?
+    options:
+      - Agent Bricks Knowledge Assistant
+      - Agent Bricks Information Extraction
+      - A Genie space over the PDF volume
+      - Fine-tune an LLM on the PDFs
+    answer: [A]
+    explain: Knowledge Assistant builds a document Q&A agent with citations from UC volume files with little or no code, and it improves with SME feedback.
+
+  - id: d1-18
+    objective: Determine how and when to use Agent Bricks to solve problems
+    q: Finance needs invoice number, vendor, due date and total extracted from 200,000 scanned invoices into a Delta table, using a defined schema and minimal code. Which option fits best?
+    options:
+      - Knowledge Assistant
+      - Information Extraction
+      - Multi-Agent Supervisor
+      - AI Playground
+    answer: [B]
+    explain: Information Extraction turns unstructured documents into structured fields using a defined schema. It's built on ai_extract.
+
+  - id: d1-19
+    objective: Determine how and when to use Agent Bricks to solve problems
+    q: A company already has a Genie space over sales tables, a Knowledge Assistant over product manuals, and a UC function that opens support tickets. Users want one chat interface that uses the right one automatically. What should they build?
+    options:
+      - A new Knowledge Assistant that indexes the sales tables
+      - A Multi-Agent Supervisor that coordinates the Genie space, Knowledge Assistant and UC function
+      - Three separate Databricks Apps
+      - An Information Extraction agent
+    answer: [B]
+    explain: Multi-Agent Supervisor (now called Supervisor Agent) routes each request to the right sub-agent or tool, including Genie spaces, agent endpoints, UC functions and MCP servers.
+
+  - id: d1-20
+    objective: Determine how and when to use Agent Bricks to solve problems
+    q: When is a custom agent built with Agent Framework (e.g. LangGraph wrapped in ResponsesAgent) preferable to Agent Bricks?
+    options:
+      - When the team wants the least amount of code for a standard document Q&A bot
+      - When the application needs highly custom orchestration logic, specific frameworks or fine-grained control not offered by Agent Bricks
+      - When extracting fields from invoices
+      - Never; Agent Bricks supports every possible workflow
+    answer: [B]
+    explain: Agent Bricks covers common patterns with little code. Custom orchestration or framework requirements call for a code-first agent.
+
+  - id: d1-21
+    objective: Determine how and when to use Agent Bricks to solve problems
+    q: Which TWO inputs can a Knowledge Assistant use as its knowledge source?
+    options:
+      - Files in a Unity Catalog volume
+      - An existing Vector Search index
+      - A Slack channel's live messages streamed directly
+      - A local folder on the engineer's laptop
+      - A Genie space only
+    answer: [A, B]
+    explain: Knowledge Assistant works with UC volume files (PDF, DOCX, PPTX, TXT, MD...), UC tables with text, and existing vector search indexes.

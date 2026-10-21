@@ -1,0 +1,478 @@
+section: d4
+questions:
+  - id: d4-01
+    objective: Code a chain using a pyfunc model with pre- and post-processing
+    q: In a custom mlflow.pyfunc.PythonModel, where should an expensive client (e.g. a connection to a serving endpoint) be initialized so it is created only once when the model loads?
+    options:
+      - load_context(self, context)
+      - predict(self, context, model_input)
+      - __del__
+      - A global variable set at each request
+    answer: [A]
+    explain: load_context runs once when the model loads. predict runs on every request.
+
+  - id: d4-02
+    objective: Code a chain using a pyfunc model with pre- and post-processing
+    q: A pyfunc chain must strip HTML from user input before calling the LLM and must mask phone numbers in the LLM response. Where should these steps go?
+    options:
+      - Both in predict(), as pre-processing before the LLM call and post-processing after it
+      - Both in load_context()
+      - In the model signature
+      - In the input_example
+    answer: [A]
+    explain: Pre- and post-processing are per-request logic in predict (often as helper methods called from predict).
+
+  - id: d4-03
+    objective: Code a chain using a pyfunc model with pre- and post-processing
+    q: Why would an engineer choose mlflow.pyfunc over a framework-specific flavor such as mlflow.langchain?
+    options:
+      - To package arbitrary custom Python logic (pre/post-processing, multiple models, custom routing) behind a standard predict interface
+      - Because pyfunc models cannot be served
+      - Because pyfunc is required for SQL warehouses
+      - Because pyfunc automatically fine-tunes models
+    answer: [A]
+    explain: pyfunc is the generic flavor for custom logic. Every MLflow model can also be loaded as pyfunc for serving.
+
+  - id: d4-04
+    objective: Code a simple chain according to requirements
+    q: 'In LangChain Expression Language (LCEL), which chain correctly formats a prompt, calls a chat model and returns a plain string?'
+    options:
+      - 'chain = prompt | llm | StrOutputParser()'
+      - 'chain = StrOutputParser() | llm | prompt'
+      - 'chain = llm(prompt(StrOutputParser))'
+      - 'chain = prompt + llm + parser'
+    answer: [A]
+    explain: LCEL pipes components left to right, prompt → model → parser.
+
+  - id: d4-05
+    objective: Code a simple chain according to requirements
+    q: 'A simple RAG chain is required: take a question, retrieve 4 chunks, insert them into a prompt, call the LLM, return text. Which ordering is correct?'
+    options:
+      - question → retriever → prompt(context, question) → LLM → output parser
+      - question → LLM → retriever → prompt
+      - retriever → output parser → LLM → question
+      - prompt → output parser → retriever → LLM
+    answer: [A]
+    explain: Retrieve context first, fill the prompt, generate, then parse.
+
+  - id: d4-06
+    objective: 'Choose the basic elements needed to create a RAG application: model flavor, embedding model, retriever, dependencies, input examples, model signature'
+    q: Registering a model to Unity Catalog fails with an error about a missing signature. What is the simplest fix?
+    options:
+      - Provide an input_example when logging (or use ResponsesAgent, whose signature is inferred automatically)
+      - Register to the workspace model registry instead
+      - Remove pip_requirements
+      - Disable Unity Catalog
+    answer: [A]
+    explain: Unity Catalog requires a model signature. MLflow infers it from input_example, and ResponsesAgent infers it automatically.
+
+  - id: d4-07
+    objective: 'Choose the basic elements needed to create a RAG application: model flavor, embedding model, retriever, dependencies, input examples, model signature'
+    q: Which TWO should be specified when logging a RAG agent so it deploys and runs reliably on Model Serving?
+    options:
+      - Dependencies (pip_requirements or code_paths)
+      - Resources the agent uses (LLM endpoint, Vector Search index) for automatic auth
+      - The engineer's personal access token hard-coded in the agent
+      - The cluster's driver IP address
+      - A screenshot of the notebook
+    answer: [A, B]
+    explain: Dependencies make the serving environment reproducible. Declared resources enable automatic authentication passthrough. Never hard-code tokens.
+
+  - id: d4-08
+    objective: 'Choose the basic elements needed to create a RAG application: model flavor, embedding model, retriever, dependencies, input examples, model signature'
+    q: A RAG index was built with databricks-gte-large-en. Which embedding model should the retriever use to embed incoming queries?
+    options:
+      - databricks-gte-large-en (the same model)
+      - Any model with 768 dimensions
+      - The LLM used for generation
+      - No embedding is needed for queries
+    answer: [A]
+    explain: Queries must go into the same vector space as the documents. With managed embeddings, the index does this for you.
+
+  - id: d4-09
+    objective: Register the model to Unity Catalog using MLflow
+    q: Which code registers a logged model to Unity Catalog correctly?
+    options:
+      - 'mlflow.set_registry_uri("databricks-uc"); mlflow.register_model(model_uri, "main.genai.support_agent")'
+      - 'mlflow.register_model(model_uri, "support_agent", stage="Production")'
+      - 'mlflow.set_registry_uri("databricks"); mlflow.register_model(model_uri, "support_agent")'
+      - 'spark.write.saveAsTable("support_agent")'
+    answer: [A]
+    explain: 'Use the databricks-uc registry URI and a three-level name: catalog.schema.model.'
+
+  - id: d4-10
+    objective: Register the model to Unity Catalog using MLflow
+    q: In Unity Catalog, how should a team mark which model version is currently in production and roll back easily?
+    options:
+      - Use model aliases (e.g. @champion) and move the alias to another version to promote or roll back
+      - Use the Production stage
+      - Delete older versions
+      - Rename the model each release
+    answer: [A]
+    explain: UC models use aliases instead of the legacy stages. Moving an alias is an instant promotion or rollback.
+
+  - id: d4-11
+    objective: Register the model to Unity Catalog using MLflow
+    q: Which privilege is needed on a schema to register a new model into it in Unity Catalog?
+    options:
+      - CREATE MODEL (plus USE CATALOG and USE SCHEMA)
+      - MODIFY on every table
+      - CAN MANAGE on a cluster
+      - SELECT on system tables
+    answer: [A]
+    explain: Registering needs CREATE MODEL on the schema and USE privileges on the catalog and schema.
+
+  - id: d4-12
+    objective: Create and query a Vector Search index
+    q: Which call creates an index that automatically keeps itself in sync with a Delta table and computes embeddings from a text column?
+    options:
+      - vsc.create_delta_sync_index(..., embedding_source_column="chunk", embedding_model_endpoint_name="databricks-gte-large-en")
+      - vsc.create_direct_access_index(..., embedding_vector_column="emb")
+      - spark.createIndex("chunk")
+      - index.upsert(chunks)
+    answer: [A]
+    explain: A Delta Sync index with embedding_source_column plus a model endpoint means managed embeddings with automatic sync.
+
+  - id: d4-13
+    objective: Create and query a Vector Search index
+    q: A Delta Sync index uses pipeline_type="TRIGGERED". New rows were added to the source table. How do they appear in the index?
+    options:
+      - After calling index.sync() (or a scheduled job that triggers it)
+      - Immediately and automatically
+      - Only after recreating the endpoint
+      - Never; triggered indexes are read-only
+    answer: [A]
+    explain: Triggered sync updates only when triggered. Continuous mode updates automatically in near real time.
+
+  - id: d4-14
+    objective: Create and query a Vector Search index
+    q: Which similarity_search arguments return results restricted to HR documents and combine keyword and semantic matching?
+    options:
+      - 'filters={"department": "HR"}, query_type="HYBRID"'
+      - columns=["HR"], query_type="KEYWORD_ONLY"
+      - num_results="HR"
+      - department="HR", hybrid=True as environment variables
+    answer: [A]
+    explain: Metadata filters narrow the results, and query_type="HYBRID" combines vector and BM25 keyword search.
+
+  - id: d4-15
+    objective: Explain the key concepts and components of Mosaic AI Vector Search
+    q: Which TWO statements about Direct Vector Access indexes are true?
+    options:
+      - You write and delete vectors yourself via the SDK or REST API
+      - They do not automatically sync from a Delta table
+      - They require Change Data Feed on a source table
+      - They always compute embeddings for you
+      - They are the only index type that supports filters
+    answer: [A, B]
+    explain: Direct Vector Access means manual upserts and deletes with no source table sync. Delta Sync indexes need CDF.
+
+  - id: d4-16
+    objective: Explain the key concepts and components of Mosaic AI Vector Search
+    q: What is the difference between managed and self-managed embeddings in a Delta Sync index?
+    options:
+      - Managed - Databricks computes embeddings from a text column using a model endpoint; Self-managed - the source table already contains an embedding vector column
+      - Managed embeddings are stored outside Unity Catalog
+      - Self-managed embeddings cannot be synced
+      - There is no difference
+    answer: [A]
+    explain: With managed embeddings Databricks calls the embedding endpoint. With self-managed embeddings you provide the vectors in the table.
+
+  - id: d4-17
+    objective: Explain the key concepts and components of Mosaic AI Vector Search
+    q: Which algorithm and distance does Databricks Vector Search (now AI Search) use for approximate nearest neighbour search?
+    options:
+      - HNSW with L2 distance
+      - k-means with Manhattan distance
+      - Brute-force exact search only
+      - Decision trees
+    answer: [A]
+    explain: The docs state that it uses HNSW for ANN with L2 distance.
+
+  - id: d4-18
+    objective: Configure vector search for a particular solution based on number of embeddings, update frequency, latency, and cost requirements
+    q: A legal archive has 1.2 billion chunks, is updated once a week, and users accept a few hundred milliseconds of extra latency. Cost must be minimized. Which configuration fits?
+    options:
+      - Storage-optimized endpoint with a triggered Delta Sync index
+      - Standard endpoint with continuous sync
+      - Direct Vector Access on a standard endpoint
+      - No index; use LIKE queries in SQL
+    answer: [A]
+    explain: Over 1B vectors, cost-sensitive and latency-tolerant with weekly updates points to storage-optimized with triggered sync.
+
+  - id: d4-19
+    objective: Configure vector search for a particular solution based on number of embeddings, update frequency, latency, and cost requirements
+    q: A retailer's product search serves up to 100 QPS on 50 million items, and latency is the most critical metric. The team accepts extra up-front development work to improve accuracy. Which setup is best?
+    options:
+      - Fine-tuned embedding model, standard endpoint, hybrid search and reranking off
+      - Default embedding model, storage-optimized endpoint, hybrid and reranking on
+      - Default embedding model, standard endpoint, hybrid and reranking on
+      - Fine-tuned embedding model, storage-optimized endpoint, reranking on
+    answer: [A]
+    explain: Latency first means a standard endpoint, with no hybrid search or reranking (both add latency). Improve accuracy up front with a fine-tuned embedding model instead.
+
+  - id: d4-20
+    objective: Configure vector search for a particular solution based on number of embeddings, update frequency, latency, and cost requirements
+    q: Inventory availability text changes every few seconds and must be searchable almost immediately. Which configuration is appropriate?
+    options:
+      - Standard endpoint with a Delta Sync index in CONTINUOUS mode
+      - Storage-optimized endpoint with TRIGGERED sync once a day
+      - Rebuild the index nightly
+      - Store embeddings in a CSV
+    answer: [A]
+    explain: Continuous sync gives near real-time freshness, and it's only available on standard endpoints. It costs more than triggered sync.
+
+  - id: d4-21
+    objective: Identify how to serve an LLM application that leverages Foundation Model APIs
+    q: A team is prototyping and expects low, unpredictable traffic. Which Foundation Model API mode is most appropriate?
+    options:
+      - Pay-per-token
+      - Provisioned throughput with high minimum capacity
+      - Self-hosting on GPUs
+      - Batch only
+    answer: [A]
+    explain: Pay-per-token needs no capacity planning and is ideal for development and variable or low traffic.
+
+  - id: d4-22
+    objective: Identify how to serve an LLM application that leverages Foundation Model APIs
+    q: A production app needs guaranteed throughput and performance for a fine-tuned Llama model. Which option fits?
+    options:
+      - Foundation Model APIs provisioned throughput
+      - Pay-per-token shared endpoint
+      - AI Playground
+      - ai_query in a notebook loop
+    answer: [A]
+    explain: Provisioned throughput gives dedicated capacity and supports fine-tuned or custom-weight foundation models.
+
+  - id: d4-23
+    objective: Identify how to serve an LLM application that leverages Foundation Model APIs
+    q: The company wants a third-party provider's model (e.g. a hosted proprietary LLM) governed through Databricks with centralized credentials, rate limits and logging. What should they create?
+    options:
+      - An external model serving endpoint with the provider API key stored in Databricks secrets
+      - A notebook that calls the provider with a hard-coded key
+      - A Delta Sharing recipient
+      - A Genie space
+    answer: [A]
+    explain: External model endpoints proxy third-party providers, so AI Gateway features and secrets management apply to them too.
+
+  - id: d4-24
+    objective: Identify batch inference workloads and apply ai_query() appropriately
+    q: Which workload is the best fit for ai_query()?
+    options:
+      - Nightly sentiment classification of 5 million product reviews in a Delta table
+      - A real-time chat UI for customers
+      - Streaming token-by-token answers to a mobile app
+      - Interactive debugging of a single prompt
+    answer: [A]
+    explain: ai_query is built for batch inference over tables in SQL or jobs.
+
+  - id: d4-25
+    objective: Identify batch inference workloads and apply ai_query() appropriately
+    q: A batch ai_query job over 10M rows fails entirely when a few rows hit model errors. What should be changed?
+    options:
+      - Set failOnError => false so errors are returned per row instead of failing the query
+      - Switch to a Databricks App
+      - Use a higher temperature
+      - Split into 10M separate jobs
+    answer: [A]
+    explain: With failOnError => false, ai_query returns a result and error per row so the job can finish and failed rows can be retried.
+
+  - id: d4-26
+    objective: Identify batch inference workloads and apply ai_query() appropriately
+    q: An ai_query batch job must return extracted fields as a typed structure instead of free text. Which argument helps?
+    options:
+      - responseFormat (structured output)
+      - failOnError
+      - num_results
+      - pipeline_type
+    answer: [A]
+    explain: responseFormat makes the model return output that matches a JSON schema or STRUCT.
+
+  - id: d4-27
+    objective: Configure a persistent datastore to store and retrieve intermediate memory or structured information
+    q: A multi-turn agent must persist conversation state (thread checkpoints) with low-latency reads and writes on every turn. Which datastore is most appropriate on Databricks?
+    options:
+      - Lakebase (managed Postgres) - e.g. as a LangGraph checkpointer
+      - A Delta table rewritten on each message
+      - The MLflow experiment artifacts folder
+      - A Vector Search index
+    answer: [A]
+    explain: Lakebase is an OLTP database built for frequent small transactional reads and writes. Delta is built for analytics.
+
+  - id: d4-28
+    objective: Configure a persistent datastore to store and retrieve intermediate memory or structured information
+    q: An agent needs low-latency lookups of per-customer structured attributes (tier, region, open orders) during each request. Which TWO options fit?
+    options:
+      - An online/feature table (feature serving) keyed on customer_id
+      - A Lakebase table or synced table queried by a tool
+      - Embedding the attributes in the system prompt for all customers
+      - Fine-tuning the LLM on customer attributes
+      - Writing them to cluster logs
+    answer: [A, B]
+    explain: Online feature tables and Lakebase give fast key-based lookups of structured data.
+
+  - id: d4-29
+    objective: Apply CI/CD best practices such as updating a Vector Search index, promoting prompts across environments, and testing individual components of an agent
+    q: A nightly ingestion job MERGEs updated chunks into the source table of a triggered Delta Sync index. What should the CI/CD workflow do next?
+    options:
+      - Run a step that calls index.sync() after the MERGE completes
+      - Drop and recreate the endpoint
+      - Nothing; triggered indexes sync themselves continuously
+      - Redeploy the agent endpoint
+    answer: [A]
+    explain: Triggered indexes need an explicit sync after the source table changes.
+
+  - id: d4-30
+    objective: Apply CI/CD best practices such as updating a Vector Search index, promoting prompts across environments, and testing individual components of an agent
+    q: Which TWO are good practices for testing an agent in CI?
+    options:
+      - Unit-test individual tools, the retriever and output parsers separately
+      - Run mlflow.genai.evaluate() on a fixed evaluation dataset as a quality gate before promotion
+      - Test only in production with real users
+      - Skip tests for prompts since they are just text
+      - Deploy directly from a developer laptop
+    answer: [A, B]
+    explain: Component tests catch bugs early, and evaluation against a fixed dataset catches quality regressions.
+
+  - id: d4-31
+    objective: Apply CI/CD best practices such as updating a Vector Search index, promoting prompts across environments, and testing individual components of an agent
+    q: Which tool defines Databricks resources (jobs, serving endpoints, apps) as code with dev/staging/prod targets?
+    options:
+      - Databricks Asset Bundles (now called Declarative Automation Bundles) via databricks.yml
+      - Delta Sharing
+      - AI Playground
+      - Unity Catalog lineage
+    answer: [A]
+    explain: Bundles define resources declaratively per target environment and are deployed with the Databricks CLI.
+
+  - id: d4-32
+    objective: Apply prompt version control and manage prompt lifecycle
+    q: A prompt is updated in dev, validated in staging, and promoted to production after approval. Version history and rollback are required. What is the recommended approach?
+    options:
+      - Register prompt versions in the MLflow Prompt Registry and promote by moving aliases (e.g. staging → production)
+      - Overwrite a JSON file on the CI runner each deploy
+      - Overwrite a Delta table with the latest prompt
+      - Hard-code the prompt in the agent and redeploy
+    answer: [A]
+    explain: Prompt Registry versions are immutable with full history, and aliases give gated promotion and instant rollback.
+
+  - id: d4-33
+    objective: Apply prompt version control and manage prompt lifecycle
+    q: How does an agent load the current production version of a prompt from the MLflow Prompt Registry?
+    options:
+      - mlflow.genai.load_prompt("prompts:/main.prompts.support@production")
+      - mlflow.load_model("prompts:/support/latest")
+      - spark.read.table("prompts")
+      - open("prompt.txt").read()
+    answer: [A]
+    explain: 'Load by alias using the prompts:/<name>@<alias> URI. Moving the alias changes the prompt without code changes.'
+
+  - id: d4-34
+    objective: Apply prompt version control and manage prompt lifecycle
+    q: Which statement about MLflow Prompt Registry versions is correct?
+    options:
+      - Versions are immutable; changes create a new version, and aliases are mutable pointers to versions
+      - Versions can be edited in place
+      - Aliases are immutable
+      - Prompts are stored only in local files
+    answer: [A]
+    explain: Immutable versions plus movable aliases work like Git for prompts. Prompts are stored in Unity Catalog.
+
+  - id: d4-35
+    objective: Integrate managed, external, and custom MCP servers based on a given application requirements
+    q: An agent needs to call governed Unity Catalog functions and query a Vector Search index through MCP with the least maintenance. What should the engineer use?
+    options:
+      - Databricks managed MCP servers for UC functions and Vector Search
+      - A custom MCP server hosted on a VM
+      - An external MCP server from a third party
+      - Copy the functions into the prompt
+    answer: [A]
+    explain: Managed MCP servers expose UC functions, Vector Search indexes and Genie spaces with no server to maintain.
+
+  - id: d4-36
+    objective: Integrate managed, external, and custom MCP servers based on a given application requirements
+    q: A vendor provides an MCP server for its SaaS product that requires an API key. How should it be integrated with Databricks?
+    options:
+      - Register it as an external MCP server via a Unity Catalog connection, storing the key in Databricks Secrets / managed OAuth
+      - Embed the API key in the agent's prompt
+      - Re-implement the vendor's API as a custom MCP server
+      - Expose the key in the Databricks App frontend
+    answer: [A]
+    explain: External MCP servers connect through UC connections with secrets or managed OAuth, which keeps credentials governed and out of code.
+
+  - id: d4-37
+    objective: Integrate managed, external, and custom MCP servers based on a given application requirements
+    q: The company has a proprietary internal pricing engine with a REST API and no existing MCP server. The agent must call it through MCP. What is the recommended approach?
+    options:
+      - Build a custom MCP server and host it as a Databricks App
+      - Use the managed Genie MCP server
+      - Use the managed Vector Search MCP server
+      - Ask the vendor for a managed server
+    answer: [A]
+    explain: Custom logic with no managed or external server available calls for a custom MCP server, which Databricks Apps can host.
+
+  - id: d4-38
+    objective: Develop an appropriate interactive user facing interface for an agent usage scenario (Apps, Slack, Teams, etc.)
+    q: Support staff need a web chat UI for an agent endpoint. Requirements are corporate SSO, no long-lived tokens in the browser, and answers that respect each user's data permissions. Which approach is correct?
+    options:
+      - A Databricks App whose backend calls the agent endpoint, using user authorization (on-behalf-of-user) so UC permissions apply per user
+      - A static web page with a PAT in JavaScript
+      - Make the endpoint public with an API key in the frontend
+      - Email answers to users
+    answer: [A]
+    explain: Databricks Apps provide SSO and server-side calls, and user authorization (x-forwarded-access-token) enforces per-user permissions.
+
+  - id: d4-39
+    objective: Develop an appropriate interactive user facing interface for an agent usage scenario (Apps, Slack, Teams, etc.)
+    q: Domain experts must test a new agent before launch and leave structured feedback on responses. Which interface is most appropriate?
+    options:
+      - The Review App created by agents.deploy()
+      - A public Slack channel with the raw endpoint URL
+      - The Databricks SQL editor
+      - Cluster web terminal
+    answer: [A]
+    explain: The Review App is designed for stakeholders and SMEs to chat with the agent and give feedback, which is logged with the traces.
+
+  - id: d4-40
+    objective: Control access to resources from model serving endpoints
+    q: An agent on Model Serving queries a Vector Search index and an LLM endpoint. The team wants Databricks to manage short-lived credentials automatically. What should they do?
+    options:
+      - Declare the index and endpoint in resources=[DatabricksVectorSearchIndex(...), DatabricksServingEndpoint(...)] when logging the model
+      - Put a PAT in the agent code
+      - Grant "All users" CAN MANAGE on the endpoint
+      - Disable authentication on the index
+    answer: [A]
+    explain: Automatic authentication passthrough uses the declared resources to issue least-privilege, short-lived credentials.
+
+  - id: d4-41
+    objective: Control access to resources from model serving endpoints
+    q: Users must only see results from tables they are personally allowed to read, enforced by Unity Catalog row filters. Which authentication method should the agent use?
+    options:
+      - On-behalf-of-user (OBO) authentication with a UserAuthPolicy and ModelServingUserCredentials inside predict()
+      - Automatic passthrough with a shared service principal
+      - A single admin PAT stored in secrets
+      - No authentication
+    answer: [A]
+    explain: OBO runs queries as the end user, so their UC permissions, row filters and column masks apply.
+
+  - id: d4-42
+    objective: Control access to resources from model serving endpoints
+    q: An agent must call an external SaaS API that is not a Databricks resource. How should credentials be provided to the serving endpoint?
+    options:
+      - As environment variables that reference Databricks secrets, e.g. {{secrets/my_scope/api_key}}
+      - Hard-coded in agent.py
+      - In the model's input_example
+      - In the endpoint name
+    answer: [A]
+    explain: Manual authentication uses secret-backed environment variables, so keys stay out of code and logs.
+
+  - id: d4-43
+    objective: Control access to resources from model serving endpoints
+    q: Which endpoint permission lets a user send queries to a serving endpoint without being able to modify it?
+    options:
+      - CAN QUERY
+      - CAN MANAGE
+      - CAN RESTART
+      - OWNER
+    answer: [A]
+    explain: CAN QUERY allows invoking the endpoint. CAN MANAGE allows configuration changes.

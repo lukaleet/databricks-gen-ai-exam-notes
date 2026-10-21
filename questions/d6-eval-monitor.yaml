@@ -1,0 +1,270 @@
+section: d6
+questions:
+  - id: d6-01
+    objective: Select an LLM choice (size and architecture) based on a set of quantitative evaluation metrics
+    q: 'Evaluation results - Model P (70B dense) correctness 0.90, cost $$$, p95 3.5s; Model Q (8B) correctness 0.88, cost $, p95 0.6s; Model R (3B) correctness 0.71, cost ¢, p95 0.3s. Requirement - correctness ≥ 0.85 at minimal cost. Which model?'
+    options:
+      - Q
+      - P
+      - R
+      - P and R ensemble
+    answer: [A]
+    explain: Q meets the threshold at the lowest cost. P's small quality gain isn't worth the cost, and R fails the threshold.
+
+  - id: d6-02
+    objective: Select an LLM choice (size and architecture) based on a set of quantitative evaluation metrics
+    q: Why can a Mixture-of-Experts (MoE) model offer a good quality/cost trade-off?
+    options:
+      - It activates only a subset of its parameters (experts) per token, reducing inference compute relative to its total size
+      - It has no parameters
+      - It does not need GPUs
+      - It always has a longer context window
+    answer: [A]
+    explain: MoE routes each token to a few experts, so it has large capacity with lower compute per token.
+
+  - id: d6-03
+    objective: Select key metrics to monitor for a specific LLM deployment scenario
+    q: Which TWO metrics are most important to monitor for a customer-facing real-time chatbot?
+    options:
+      - Latency (p95 / time-to-first-token) and error rate
+      - Safety / quality judge scores and user feedback on sampled traffic
+      - BLEU against reference translations
+      - Training loss of the base model
+      - Number of Delta table versions
+    answer: [A, B]
+    explain: Real-time UX depends on latency and errors. Quality and safety signals catch harmful or poor answers.
+
+  - id: d6-04
+    objective: Select key metrics to monitor for a specific LLM deployment scenario
+    q: A nightly batch summarization job processes 10M documents. Which metrics matter most?
+    options:
+      - Throughput, total token usage/cost, error rate, and sampled quality
+      - Time-to-first-token for each user
+      - Thumbs-up rate in a chat UI
+      - Number of concurrent chat sessions
+    answer: [A]
+    explain: Batch workloads care about throughput, cost, failures and overall quality, not interactive latency.
+
+  - id: d6-05
+    objective: Evaluate agent performance using MLflow scoring and tracing
+    q: 'In mlflow.genai.evaluate(data=..., predict_fn=..., scorers=[...]), how are the "inputs" of each evaluation row passed to predict_fn?'
+    options:
+      - As keyword arguments matching the keys of the inputs dict
+      - As a single JSON string
+      - Through environment variables
+      - They are not passed; predict_fn reads a file
+    answer: [A]
+    explain: Each row's inputs dict is unpacked into keyword arguments of predict_fn.
+
+  - id: d6-06
+    objective: Evaluate agent performance using MLflow scoring and tracing
+    q: The team already has production traces and wants to score them without re-running the agent. How?
+    options:
+      - Pass the traces (e.g. from mlflow.search_traces) as data to mlflow.genai.evaluate() without a predict_fn
+      - It is impossible; evaluation always re-runs the agent
+      - Export traces to CSV and score them by hand only
+      - Redeploy the agent
+    answer: [A]
+    explain: mlflow.genai.evaluate can score existing traces directly, so predict_fn isn't needed.
+
+  - id: d6-07
+    objective: Evaluate agent performance using MLflow scoring and tracing
+    q: What does an MLflow trace contain for an agent request?
+    options:
+      - A tree of spans (LLM calls, retrievers, tools) with inputs, outputs, latency, token usage and errors
+      - Only the final answer
+      - Only the model weights
+      - The cluster configuration
+    answer: [A]
+    explain: Traces capture every step as spans, which lets you debug and evaluate each one.
+
+  - id: d6-08
+    objective: Use inference logging to assess deployed RAG application performance
+    q: An engineer wants to find which production questions received poorly grounded answers last week. What is the best data source?
+    options:
+      - The endpoint's inference table (or production traces), evaluated with a groundedness judge
+      - The model's training data
+      - The Vector Search endpoint's billing page
+      - The prompt registry
+    answer: [A]
+    explain: Inference tables and traces log real requests and responses. Scoring them with judges finds the failing cases.
+
+  - id: d6-09
+    objective: Use inference logging to assess deployed RAG application performance
+    q: Where are inference table logs stored?
+    options:
+      - In a Delta table in Unity Catalog
+      - Only in the browser console
+      - In the driver logs of a cluster
+      - In a CSV on the local machine
+    answer: [A]
+    explain: Inference tables are UC Delta tables, so you can query them with SQL and govern them like any other table.
+
+  - id: d6-10
+    objective: Use Databricks features to control LLM costs
+    q: Which TWO actions reduce LLM serving costs on Databricks?
+    options:
+      - Configure AI Gateway rate limits per user/group/endpoint
+      - Use the smallest model that meets the quality bar and reduce prompt tokens (fewer, re-ranked chunks)
+      - Always use the largest model available
+      - Send every row of a 10M-row table through a real-time endpoint one by one instead of using ai_query
+      - Set LLM-judge monitoring sample rate to 100% for expensive judges
+    answer: [A, B]
+    explain: Rate limits cap spending, and right-sizing models and prompts lowers the cost per request.
+
+  - id: d6-11
+    objective: Use Databricks features to control LLM costs
+    q: A custom agent endpoint is used only during business hours in development. How can idle cost be minimized?
+    options:
+      - Enable scale-to-zero on the serving endpoint
+      - Use provisioned throughput with a high minimum
+      - Keep a GPU cluster running 24/7
+      - Disable inference tables
+    answer: [A]
+    explain: Scale-to-zero removes idle compute cost. The trade-off is a cold start.
+
+  - id: d6-12
+    objective: Use Databricks features to control LLM costs
+    q: Which system table tracks per-request token usage for serving endpoints governed by AI Gateway?
+    options:
+      - system.serving.endpoint_usage
+      - system.access.audit only
+      - system.compute.clusters
+      - information_schema.tables
+    answer: [A]
+    explain: system.serving.endpoint_usage records token counts and requesters per request, and joins with system.serving.served_entities.
+
+  - id: d6-13
+    objective: Use inference tables and Agent Monitoring to track a live LLM endpoint
+    q: How are LLM judges set up to continuously evaluate a sample of live agent traffic in MLflow 3?
+    options:
+      - Register the scorer and start it with a sampling configuration, e.g. Safety().register(name="safety").start(sampling_config=ScorerSamplingConfig(sample_rate=0.2))
+      - Run mlflow.genai.evaluate() manually once a year
+      - Add judges to the system prompt
+      - Configure them in cluster init scripts
+    answer: [A]
+    explain: Production monitoring uses .register() then .start() with a sample rate. Results are attached to traces as feedback.
+
+  - id: d6-14
+    objective: Use inference tables and Agent Monitoring to track a live LLM endpoint
+    q: Which kinds of scorers can be used for MLflow production monitoring? Select TWO.
+    options:
+      - Built-in LLM judges such as Safety and RelevanceToQuery
+      - '@scorer-decorated functions defined and registered from a Databricks notebook'
+      - Class-based Scorer subclasses with complex initialization
+      - Correctness with ground truth on unlabeled live traffic
+      - Spark ML pipelines
+    answer: [A, B]
+    explain: Production monitoring supports built-in judges and @scorer functions. Class-based Scorers aren't supported, and live traffic has no ground truth.
+
+  - id: d6-15
+    objective: Identify evaluation judges that require ground truth
+    q: Which TWO built-in judges require ground truth (expectations)?
+    options:
+      - Correctness
+      - RetrievalSufficiency
+      - Safety
+      - RelevanceToQuery
+      - RetrievalGroundedness
+    answer: [A, B]
+    explain: Correctness and RetrievalSufficiency compare against expected facts or responses. ToolCallCorrectness also needs expectations.
+
+  - id: d6-16
+    objective: Identify evaluation judges that require ground truth
+    q: Which judge can detect hallucinations relative to retrieved documents WITHOUT any ground truth?
+    options:
+      - RetrievalGroundedness
+      - Correctness
+      - RetrievalSufficiency
+      - ToolCallCorrectness
+    answer: [A]
+    explain: RetrievalGroundedness checks whether the response is supported by the retrieved context. No reference answer is needed.
+
+  - id: d6-17
+    objective: Use AI Gateway (Inference Tables, Usage Tables, and rate limiting) to track an LLM or agent deployed via Agent Framework
+    q: 'An agent deployed with Agent Framework must have: request/response logs for debugging, per-user token usage reports, and a cap of 100 queries per minute per user. Which AI Gateway features map to these needs (in order)?'
+    options:
+      - Inference tables; usage tracking system tables; rate limits
+      - Guardrails; inference tables; traffic splitting
+      - Usage tables; fallbacks; guardrails
+      - Rate limits; guardrails; inference tables
+    answer: [A]
+    explain: Inference tables give payload logs, usage tracking gives token usage (system.serving.endpoint_usage), and rate limits give QPM/TPM caps.
+
+  - id: d6-18
+    objective: Use AI Gateway (Inference Tables, Usage Tables, and rate limiting) to track an LLM or agent deployed via Agent Framework
+    q: The team wants to send 10% of traffic to a new model version and fail over to a backup model when the primary errors. Which AI Gateway features apply?
+    options:
+      - Traffic splitting and fallbacks
+      - Inference tables and guardrails
+      - Rate limits and usage tables
+      - Prompt Registry aliases
+    answer: [A]
+    explain: Traffic splitting routes a percentage of requests, and fallbacks redirect to another model on errors.
+
+  - id: d6-19
+    objective: Use Databricks custom Scorers for evaluating agents and LLMs
+    q: Every response must include a citation in the format "[source:<doc_id>]". What is the simplest, cheapest way to evaluate this?
+    options:
+      - A code-based @scorer that checks the output with a regex
+      - An expensive LLM judge with a long rubric
+      - Manual review of every response
+      - The BLEU metric
+    answer: [A]
+    explain: Deterministic format checks fit code-based scorers. They're fast, cheap and exact.
+
+  - id: d6-20
+    objective: Use Databricks custom Scorers for evaluating agents and LLMs
+    q: The team needs to evaluate whether responses "acknowledge the customer's frustration empathetically" - a subjective, natural-language criterion. Which TWO approaches fit?
+    options:
+      - A Guidelines judge with the criterion written in natural language
+      - A custom LLM judge created with make_judge() using templated instructions over inputs and outputs
+      - A regex scorer counting the word "sorry"
+      - ROUGE against a reference
+      - Perplexity
+    answer: [A, B]
+    explain: Subjective criteria need LLM judges, either Guidelines or a custom make_judge judge.
+
+  - id: d6-21
+    objective: Use Databricks custom Scorers for evaluating agents and LLMs
+    q: Which parameters can a function decorated with @scorer accept?
+    options:
+      - inputs, outputs, expectations, trace
+      - model, optimizer, loss
+      - cluster_id, warehouse_id
+      - prompt_version only
+    answer: [A]
+    explain: Custom scorers can use inputs, outputs, expectations and the full trace, and return values or Feedback objects.
+
+  - id: d6-22
+    objective: Incorporate SME feedback to improve agent performance
+    q: Four SMEs rate the same responses very differently, making evaluation data unreliable. What should the engineer do?
+    options:
+      - Define clear rubrics, calibrate SMEs on the criteria, then use the aligned judgments in mlflow.genai.evaluate()
+      - Average all scores and treat them as truth
+      - Keep only cases where everyone agrees
+      - Replace SMEs entirely with an unaligned LLM judge
+    answer: [A]
+    explain: Rater inconsistency is fixed at the root with rubrics and calibration. Averaging or filtering hides the problem.
+
+  - id: d6-23
+    objective: Incorporate SME feedback to improve agent performance
+    q: How can SME corrections collected in the Review App be used to improve the agent systematically?
+    options:
+      - Turn corrected answers/expected facts into an evaluation dataset (ground truth), then iterate on prompt/retrieval and re-evaluate before release
+      - Discard them after reading
+      - Paste them into the system prompt as a giant list
+      - Use them to change the embedding dimension
+    answer: [A]
+    explain: SME labels become expectations in evaluation datasets, which drives measurable, regression-tested improvement.
+
+  - id: d6-24
+    objective: Incorporate SME feedback to improve agent performance
+    q: An LLM judge often disagrees with domain experts. How can the judge be made more trustworthy at scale?
+    options:
+      - Align the judge with SME-labeled feedback (judge alignment) and validate agreement before relying on it
+      - Increase the judge's temperature
+      - Use a smaller judge model without changes
+      - Remove SME labels
+    answer: [A]
+    explain: Judge alignment uses SME labels to tune the judge so it reproduces expert judgments. Check agreement before relying on it.

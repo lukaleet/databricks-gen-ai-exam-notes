@@ -1,0 +1,435 @@
+section: d3
+questions:
+  - id: d3-01
+    objective: Select Langchain/similar tools for use in a Generative AI application
+    q: A team needs a stateful agent with loops, conditional branching between tool calls, and persisted conversation checkpoints. Which framework fits best?
+    options:
+      - LangGraph
+      - A single LangChain LCEL chain (prompt | llm | parser)
+      - pytesseract
+      - Hugging Face tokenizers
+    answer: [A]
+    explain: LangGraph models agents as graphs with state, cycles, conditional edges and checkpointers. A linear LCEL chain doesn't loop.
+
+  - id: d3-02
+    objective: Select Langchain/similar tools for use in a Generative AI application
+    q: Which package provides ChatDatabricks, DatabricksEmbeddings and VectorSearchRetrieverTool for LangChain-based applications on Databricks?
+    options:
+      - databricks-langchain
+      - langchain-openai
+      - databricks-connect
+      - mlflow-skinny
+    answer: [A]
+    explain: databricks-langchain is the official integration package for LangChain on Databricks.
+
+  - id: d3-03
+    objective: Select Langchain/similar tools for use in a Generative AI application
+    q: An engineer built an agent with the OpenAI Agents SDK and wants to deploy it with Mosaic AI Agent Framework, with tracing, evaluation and the Review App. What should they do?
+    options:
+      - Rewrite it in LangChain, since only LangChain is supported
+      - Wrap the agent in the MLflow ResponsesAgent interface and log it with MLflow
+      - Deploy it as a Databricks job
+      - Convert it to a SQL UDF
+    answer: [B]
+    explain: ResponsesAgent is framework-agnostic. You can wrap any agent (OpenAI Agents SDK, LangGraph, custom) and deploy it with Agent Framework.
+
+  - id: d3-04
+    objective: Select Langchain/similar tools for use in a Generative AI application
+    q: Which statement about Databricks Foundation Model APIs and client libraries is true?
+    options:
+      - They require a proprietary SDK and are incompatible with the OpenAI client
+      - They are OpenAI-compatible, so the OpenAI Python client can call them (e.g. via WorkspaceClient().serving_endpoints.get_open_ai_client())
+      - They can only be called from SQL
+      - They only support embeddings
+    answer: [B]
+    explain: Foundation Model APIs expose OpenAI-compatible chat, completions and embeddings APIs.
+
+  - id: d3-05
+    objective: Qualitatively assess responses to identify common issues such as quality and safety
+    q: A RAG bot answers "Our return window is 60 days," but the only retrieved policy chunk says 30 days. What issue is this?
+    options:
+      - Hallucination / lack of groundedness
+      - Retrieval latency
+      - Formatting error
+      - Rate limiting
+    answer: [A]
+    explain: The response contradicts the retrieved context, so it's ungrounded. RetrievalGroundedness detects this.
+
+  - id: d3-06
+    objective: Qualitatively assess responses to identify common issues such as quality and safety
+    q: Reviewing traces, an engineer sees that the retrieved chunks are relevant and contain the answer, but the response ignores half of the user's two-part question. What is the most direct fix?
+    options:
+      - Re-chunk the documents
+      - Update the prompt to instruct the model to address every part of the question (and evaluate with a completeness/correctness check)
+      - Switch to a storage-optimized endpoint
+      - Disable tracing
+    answer: [B]
+    explain: Retrieval is fine, so the problem is in generation. Adjust the prompt and confirm the fix with evaluation.
+
+  - id: d3-07
+    objective: Qualitatively assess responses to identify common issues such as quality and safety
+    q: Which Databricks tools help an engineer qualitatively inspect and compare LLM responses during development? Select TWO.
+    options:
+      - AI Playground for side-by-side model comparison
+      - MLflow trace UI to inspect each step's inputs and outputs
+      - Delta Sharing
+      - Cluster event logs
+      - Unity Catalog lineage only
+    answer: [A, B]
+    explain: AI Playground compares models and prompts interactively. MLflow traces show each step (retrieval, tool calls, LLM) for debugging.
+
+  - id: d3-08
+    objective: Select chunking strategy based on model & retrieval evaluation
+    q: An engineer is unsure whether 256-, 512- or 1024-token chunks are best. What is the recommended approach?
+    options:
+      - Pick 512 because it is the most common default
+      - Build indexes for each option, evaluate them with the same evaluation dataset and retrieval/answer judges, and choose based on scores and cost/latency
+      - Choose the largest chunk size since more context is always better
+      - Ask the LLM which chunk size it prefers
+    answer: [B]
+    explain: Chunking should be data-driven. Compare strategies on the same evaluation set using retrieval and answer quality metrics.
+
+  - id: d3-09
+    objective: Select chunking strategy based on model & retrieval evaluation
+    q: Evaluation shows high RetrievalRelevance but low RetrievalSufficiency for 1024-token chunks with a 512-token embedding model. What is the likely cause?
+    options:
+      - Chunks exceed the embedding model's context, so the tail of each chunk is not represented in its embedding
+      - The LLM temperature is too high
+      - The endpoint is storage-optimized
+      - The prompt lacks a persona
+    answer: [A]
+    explain: When chunks are longer than the embedding window, content past the window is truncated in the embedding. Retrieved chunks look relevant but key facts may be missing from what was matched. Make the chunk size fit the model.
+
+  - id: d3-10
+    objective: Augment a prompt with additional context from a user's input based on key fields, terms, and intents
+    q: 'A user writes: "What is the warranty on order 88213?" Which augmentation produces the best-grounded answer?'
+    options:
+      - Pass the question to the LLM as-is
+      - Extract order_id=88213, look up the order's product and purchase date, retrieve that product's warranty policy, and add both to the prompt
+      - Add all warranty policies for every product to the prompt
+      - Ask the user to rephrase
+    answer: [B]
+    explain: Extracting key fields lets you fetch exactly the structured facts and policy context needed, so the prompt stays precise and grounded.
+
+  - id: d3-11
+    objective: Augment a prompt with additional context from a user's input based on key fields, terms, and intents
+    q: Users of an internal bot use many acronyms (e.g. "PTO", "ESPP") that don't appear in documents, which use full terms. What improves retrieval?
+    options:
+      - Query expansion / rewriting that maps acronyms to full terms before retrieval
+      - Lowering num_results to 1
+      - Removing metadata from chunks
+      - Using a smaller LLM
+    answer: [A]
+    explain: Rewriting or expanding the query bridges vocabulary gaps between users and documents.
+
+  - id: d3-12
+    objective: Augment a prompt with additional context from a user's input based on key fields, terms, and intents
+    q: A support assistant serves billing, shipping and technical questions, each needing different instructions and data. What is the best design?
+    options:
+      - One giant prompt with all instructions and all data
+      - Classify the intent first, then route to an intent-specific prompt template and tools
+      - Randomly pick a prompt
+      - Fine-tune three models
+    answer: [B]
+    explain: Intent detection plus routing keeps each prompt focused and adds only the relevant context and tools.
+
+  - id: d3-13
+    objective: Create a prompt that adjusts an LLM's response from a baseline to a desired output
+    q: Baseline responses are accurate but long and technical. The desired output is a 3-bullet summary for non-technical customers. Which prompt change is most effective?
+    options:
+      - '"Answer for a non-technical customer in exactly 3 short bullet points, avoiding jargon," plus one example of the desired output'
+      - Increase temperature to 1.2
+      - Add more retrieved chunks
+      - Remove the system prompt
+    answer: [A]
+    explain: Explicit audience, length and format instructions plus a few-shot example move the output from the baseline to the target.
+
+  - id: d3-14
+    objective: Create a prompt that adjusts an LLM's response from a baseline to a desired output
+    q: After several prompt edits, the team can't tell which version produced better results. What should they do?
+    options:
+      - Register each version in the MLflow Prompt Registry and evaluate each version against the same evaluation dataset
+      - Keep prompts in Slack messages
+      - Only test with one example
+      - Always use the newest prompt
+    answer: [A]
+    explain: Versioned prompts plus consistent evaluation make comparisons objective and traceable.
+
+  - id: d3-15
+    objective: Create a prompt that adjusts an LLM's response from a baseline to a desired output
+    q: Prompting alone cannot get a model to consistently use a company's very specific writing style and domain terminology across thousands of examples. Facts do not change often. What is a reasonable next step?
+    options:
+      - Fine-tune the model on high-quality examples of the desired style
+      - Increase top_k retrieval to 100
+      - Use a larger chunk overlap
+      - Disable guardrails
+    answer: [A]
+    explain: Fine-tuning suits consistent style, format and domain language. It's not a good fit for frequently changing facts, which belong in RAG.
+
+  - id: d3-16
+    objective: Implement LLM guardrails to prevent negative outcomes
+    q: A public chatbot must not return toxic content and must not leak credit card numbers. Which Databricks feature provides both controls at the serving endpoint level with configuration only?
+    options:
+      - AI Gateway guardrails (safety filtering and PII detection with block/mask)
+      - Unity Catalog lineage
+      - Delta time travel
+      - Cluster policies
+    answer: [A]
+    explain: AI Gateway guardrails (now part of Unity Gateway service policies) offer safety filtering and PII detection on requests and responses.
+
+  - id: d3-17
+    objective: Implement LLM guardrails to prevent negative outcomes
+    q: Which TWO are INPUT guardrails?
+    options:
+      - Detecting prompt-injection attempts before calling the LLM
+      - Masking PII in the user message before it reaches the model
+      - Checking the response for toxic language
+      - Validating that the output is valid JSON
+      - Adding citations to the answer
+    answer: [A, B]
+    explain: Input guardrails act on the request. Toxicity checks on the response and JSON validation are output guardrails.
+
+  - id: d3-18
+    objective: Implement LLM guardrails to prevent negative outcomes
+    q: An agent can call a "delete_customer_record" tool. What is the most important guardrail?
+    options:
+      - Require explicit human confirmation and enforce least-privilege permissions for destructive actions
+      - Use a higher temperature
+      - Add more examples to the prompt
+      - Disable tracing for that tool
+    answer: [A]
+    explain: Destructive actions need human-in-the-loop confirmation and tight permissions. Prompting alone can be bypassed.
+
+  - id: d3-19
+    objective: Select the best LLM based on the attributes of the application to be developed
+    q: An application must classify short support messages into 6 categories at very high volume with low latency and cost. Which model choice is most appropriate?
+    options:
+      - The largest available reasoning model
+      - A small, fast instruction-tuned model (or fine-tuned small model) that meets the accuracy target
+      - A text-to-image model
+      - An embedding model used as a generator
+    answer: [B]
+    explain: For simple, high-volume tasks, choose the smallest model that meets the quality bar, which keeps latency and cost low.
+
+  - id: d3-20
+    objective: Select the best LLM based on the attributes of the application to be developed
+    q: An app sends long prompts of 40k tokens (retrieved context plus history). Which model attribute is a hard requirement?
+    options:
+      - A context window large enough for prompt plus expected output
+      - Highest BLEU score
+      - Smallest parameter count
+      - Vision capability
+    answer: [A]
+    explain: If the prompt doesn't fit the context window, the request fails or gets truncated. Context length is a hard constraint.
+
+  - id: d3-21
+    objective: Select the best LLM based on the attributes of the application to be developed
+    q: An agent must reliably call external tools with structured arguments. Which model capability is essential?
+    options:
+      - Function/tool calling support
+      - Image generation
+      - Speech-to-text
+      - Low embedding dimension
+    answer: [A]
+    explain: Agents depend on the model's ability to emit structured tool calls.
+
+  - id: d3-22
+    objective: Select an embedding model context length based on source documents, expected queries, and optimization strategy
+    q: 'Documents are chunked to at most 256 tokens, and queries are short. Cost and latency matter more than marginal quality. Which embedding model profile is best?'
+    options:
+      - 'Context 512, 0.1 GB, 384 dimensions'
+      - 'Context 8192, 7 GB, 4096 dimensions'
+      - 'Context 32768, 14 GB, 4096 dimensions'
+      - 'Context 128, 0.05 GB, 256 dimensions'
+    answer: [A]
+    explain: The model must fit 256-token chunks, and the smallest model that does is cheapest and fastest. A 128-token model would truncate chunks.
+
+  - id: d3-23
+    objective: Select an embedding model context length based on source documents, expected queries, and optimization strategy
+    q: Which statement about embedding models in a RAG system is correct?
+    options:
+      - Queries and documents must be embedded with the same embedding model
+      - Any two embedding models produce compatible vectors if dimensions match
+      - Embedding context length has no effect on chunking
+      - Higher dimensions always reduce latency
+    answer: [A]
+    explain: Vectors from different models live in different spaces, so query and document embeddings must come from the same model.
+
+  - id: d3-24
+    objective: Select a model from a model hub or marketplace for a task based on model metadata/model cards
+    q: A commercial product needs an open-weight LLM. Model X has the best benchmark score but its model card states a research-only, non-commercial license. What should the engineer do?
+    options:
+      - Use Model X anyway since it scores best
+      - Choose the best-performing model whose license allows commercial use
+      - Fine-tune Model X to change its license
+      - Rename Model X
+    answer: [B]
+    explain: The license on the model card is a hard constraint. Benchmarks don't override legal terms.
+
+  - id: d3-25
+    objective: Select a model from a model hub or marketplace for a task based on model metadata/model cards
+    q: Which information is typically found on a model card and is most useful when selecting a model? Select TWO.
+    options:
+      - Intended tasks and limitations
+      - License and context length
+      - The user's Databricks workspace ID
+      - The current Vector Search index size
+      - Your company's Slack workspace name
+    answer: [A, B]
+    explain: Model cards describe intended use, limitations, license, size, context length, training data and evaluation results.
+
+  - id: d3-26
+    objective: Select the best model for a given task based on common metrics generated in experiments
+    q: Which metric is most commonly used to compare models on a summarization task against reference summaries?
+    options:
+      - ROUGE
+      - BLEU
+      - Perplexity
+      - Accuracy
+    answer: [A]
+    explain: ROUGE measures n-gram overlap (recall-oriented) with reference summaries. BLEU is mainly used for translation.
+
+  - id: d3-27
+    objective: Select the best model for a given task based on common metrics generated in experiments
+    q: Which metric is classically used for machine translation quality against reference translations?
+    options:
+      - BLEU
+      - ROUGE-L
+      - MRR
+      - NDCG
+    answer: [A]
+    explain: BLEU measures n-gram precision against reference translations.
+
+  - id: d3-28
+    objective: Select the best model for a given task based on common metrics generated in experiments
+    q: 'Three models were evaluated: A (correctness 0.91, p95 latency 4.8s), B (0.89, 1.1s), C (0.74, 0.4s). The requirement is correctness ≥ 0.85 and the lowest possible latency. Which model?'
+    options:
+      - A
+      - B
+      - C
+      - None meet the requirement
+    answer: [B]
+    explain: Only A and B meet the quality threshold. Of those, B has much lower latency.
+
+  - id: d3-29
+    objective: Utilize MLflow and Agent Framework for developing agentic systems
+    q: Which interface does Databricks recommend for authoring new agents with Agent Framework?
+    options:
+      - MLflow ResponsesAgent
+      - MLflow ChatModel
+      - Plain sklearn Pipeline
+      - Spark UDF
+    answer: [A]
+    explain: ResponsesAgent is the recommended interface (OpenAI Responses-compatible). ChatAgent and ChatModel are legacy.
+
+  - id: d3-30
+    objective: Utilize MLflow and Agent Framework for developing agentic systems
+    q: What is the "models-from-code" approach when logging an agent with MLflow?
+    options:
+      - Logging the agent by passing the path of a Python file that defines the agent (and calls mlflow.models.set_model), instead of pickling an object
+      - Generating code automatically from a model
+      - Storing model weights in Git
+      - Compiling the agent to a JAR
+    answer: [A]
+    explain: Models-from-code logs the source file (python_model="agent.py"), which avoids serialization problems and keeps code readable.
+
+  - id: d3-31
+    objective: Utilize MLflow and Agent Framework for developing agentic systems
+    q: Besides creating a Model Serving endpoint, what else does databricks.agents.deploy() set up? Select TWO.
+    options:
+      - A Review App for stakeholder feedback
+      - Inference tables / tracing for monitoring
+      - A new Unity Catalog metastore
+      - A Delta Live Tables pipeline that retrains the model
+      - A new workspace
+    answer: [A, B]
+    explain: agents.deploy() creates the endpoint, enables the Review App, and sets up logging, tracing and monitoring through inference tables.
+
+  - id: d3-32
+    objective: Utilize MLflow and Agent Framework for developing agentic systems
+    q: How can an engineer capture every LLM call, retrieval and tool call made by a LangChain-based agent with minimal code?
+    options:
+      - Call mlflow.langchain.autolog() to enable MLflow Tracing
+      - Add print statements
+      - Enable cluster logging
+      - Use Delta time travel
+    answer: [A]
+    explain: Framework autologging turns on MLflow Tracing, which records spans for each step.
+
+  - id: d3-33
+    objective: Compare the evaluation and monitoring phases of the Gen AI application life cycle
+    q: Which statement correctly contrasts evaluation and monitoring?
+    options:
+      - Evaluation runs offline on curated datasets that can include ground truth; monitoring runs continuously on live traffic, usually without ground truth
+      - Evaluation only happens after deployment; monitoring only before
+      - Both require ground truth for every request
+      - Monitoring replaces evaluation
+    answer: [A]
+    explain: Evaluation is pre-production on curated data (ground truth possible). Monitoring is production on live traces, usually with judges that don't need ground truth.
+
+  - id: d3-34
+    objective: Compare the evaluation and monitoring phases of the Gen AI application life cycle
+    q: Which judge is NOT suitable for automated production monitoring of live traffic without labels?
+    options:
+      - Correctness
+      - Safety
+      - RelevanceToQuery
+      - RetrievalGroundedness
+    answer: [A]
+    explain: Correctness needs expected answers (ground truth), which live traffic doesn't have.
+
+  - id: d3-35
+    objective: Compare the evaluation and monitoring phases of the Gen AI application life cycle
+    q: How do monitoring and evaluation feed each other in a mature GenAI lifecycle?
+    options:
+      - Problematic production traces are reviewed and added to the evaluation dataset used to test future versions
+      - They are completely independent
+      - Monitoring data is deleted after 24 hours and never reused
+      - Evaluation results automatically retrain the LLM
+    answer: [A]
+    explain: Monitoring finds failures. Those cases, once labeled by SMEs, grow the evaluation set and become regression tests.
+
+  - id: d3-36
+    objective: Enable multi-agent systems to leverage Genie Spaces or conversational API to retrieve data
+    q: A multi-agent assistant must answer "What were last month's top 10 products by revenue?" from governed sales tables. Which sub-agent is most appropriate?
+    options:
+      - A Genie space (text-to-SQL) over the sales tables
+      - A vector search index over sales PDFs
+      - An Information Extraction agent
+      - A summarization model
+    answer: [A]
+    explain: Aggregations over structured tables are a text-to-SQL job. Genie spaces are built for it.
+
+  - id: d3-37
+    objective: Enable multi-agent systems to leverage Genie Spaces or conversational API to retrieve data
+    q: A Slack bot built outside Databricks needs to ask natural-language questions of a Genie space and get results, including follow-up questions. What should it use?
+    options:
+      - The Genie Conversation API (start-conversation, then follow-up messages in the same conversation)
+      - The Vector Search REST API
+      - The Jobs API
+      - The DBFS API
+    answer: [A]
+    explain: The Genie Conversation API lets external apps start conversations, send follow-ups and fetch query results.
+
+  - id: d3-38
+    objective: Enable multi-agent systems to leverage Genie Spaces or conversational API to retrieve data
+    q: An agent that uses a Genie space is deployed to Model Serving with automatic authentication passthrough. Which resource must be declared when logging the agent?
+    options:
+      - DatabricksGenieSpace (and the SQL warehouse/tables as needed)
+      - DatabricksVectorSearchIndex only
+      - No resources are ever needed
+      - A personal access token in the code
+    answer: [A]
+    explain: Declare DatabricksGenieSpace(genie_space_id=...) so Databricks can provision short-lived credentials. Genie also needs access to its warehouse and tables.
+
+  - id: d3-39
+    objective: Enable multi-agent systems to leverage Genie Spaces or conversational API to retrieve data
+    q: Which TWO options let a LangGraph-based multi-agent system use a Genie space as a sub-agent or tool?
+    options:
+      - GenieAgent from databricks_langchain.genie
+      - The managed MCP server for Genie (/api/2.0/mcp/genie/{space_id})
+      - Reading the Genie space's underlying Parquet files with pandas
+      - Copying the Genie space's SQL into the system prompt
+      - The Unity Catalog lineage API
+    answer: [A, B]
+    explain: GenieAgent wraps a Genie space for LangChain/LangGraph, and the managed Genie MCP server exposes it as an MCP tool.

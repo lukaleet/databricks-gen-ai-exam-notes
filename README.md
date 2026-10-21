@@ -1,11 +1,90 @@
-# Databricks Generative AI Engineer Associate — Exam Notes
+# Databricks Generative AI Engineer Associate: Exam Prep
 
-Study notes and preparation material for the **Databricks Certified Generative AI Engineer Associate** exam.
+An interactive study guide for the **Databricks Certified Generative AI Engineer Associate** exam
+(the exam version published **March 18, 2026**).
 
-## Structure
+**▶ Open the interactive guide: https://lukaleet.github.io/databricks-gen-ai-exam-notes/**
 
-_Coming soon — content will be organized by exam domain._
+| What | Where |
+|---|---|
+| 📚 Study notes for every exam objective (6 sections + exam overview + study plan) | [`notes/`](notes/) and the site |
+| ✍️ 165 exam-style questions (single & multiple-selection) with explanations | [`questions/`](questions/) and the site's *Practice* page |
+| ⏱️ Timed mock exams: 45 questions, 90 minutes, weighted by section | Site → *Mock exam* |
+| 🧩 Multi-step design scenarios | [`scenarios/`](scenarios/) and the site |
+| 🃏 Flashcards + glossary (112 terms) with **old → current product names** | Site → *Flashcards*, *Glossary* |
+| 🧪 11 hands-on Databricks notebooks (built for Free Edition) | [`labs/`](labs/) |
 
-## Disclaimer
+## Exam at a glance
 
-These are personal study notes. They are not affiliated with or endorsed by Databricks and do not contain actual exam questions.
+45 scored questions · 90 minutes · online proctored · USD 200 · valid 2 years.
+
+| Section | Weight |
+|---|---|
+| 1. Design Applications | 14% |
+| 2. Data Preparation | 14% |
+| 3. Application Development | 30% |
+| 4. Assembling and Deploying Applications | 22% |
+| 5. Governance | 8% |
+| 6. Evaluation and Monitoring | 12% |
+
+## ⚠️ Naming traps (exam vs. current docs, Oct 2026)
+
+Several features were renamed **after** the exam was published. The exam uses the old names:
+
+| On the exam | In today's docs |
+|---|---|
+| Mosaic AI Vector Search | Databricks **AI Search** |
+| AI Gateway | **Unity Gateway** (legacy AI Gateway on endpoints) |
+| Genie Spaces | **Genie Agents** |
+| Multiagent Supervisor | **Supervisor Agent** (legacy since Oct 2026, like Knowledge Assistant) |
+| Databricks Assistant | **Genie Code** |
+| Databricks Asset Bundles | **Declarative Automation Bundles** |
+
+Full table: [`notes/00-exam-overview.md`](notes/00-exam-overview.md).
+
+## Hands-on labs
+
+Import into Databricks with **Workspace → Import → URL** (use the *Raw* file link), or clone this repo as a **Git folder**. Run them in order:
+
+| Lab | Topic |
+|---|---|
+| 00 | Setup: schema, volume, smoke-test the LLM and embedding endpoints |
+| 01 | Prompt engineering, structured output, prompt augmentation |
+| 02 | Parse, clean and chunk documents into a UC Delta table (CDF, MERGE) |
+| 03 | Vector Search: endpoint, Delta Sync index, filters, hybrid, rerank, retrieval metrics |
+| 04 | RAG agent with `ResponsesAgent`: tracing, `resources`, register to UC, aliases |
+| 05 | `mlflow.genai.evaluate()`: built-in judges, `@scorer`, `make_judge`, model comparison |
+| 06 | Prompt Registry: versions, aliases, promotion and rollback |
+| 07 | Tools: UC functions, a tool-calling loop, managed MCP |
+| 08 | Batch `ai_query()`, AI Functions, `ai_mask`, column masks and row filters |
+| 09 | `agents.deploy()`, AI Gateway, inference and usage tables, production monitoring |
+| 10 | pyfunc chain with pre- and post-processing |
+
+## Working on the content
+
+Content is plain Markdown/YAML. The site (`docs/`) is static HTML/JS with no framework.
+
+```bash
+pip install pyyaml markdown
+python3 scripts/build.py            # validates all questions and regenerates docs/data/content.js
+python3 -m http.server -d docs 8000 # preview at http://localhost:8000
+```
+
+Question format (`questions/*.yaml`):
+
+```yaml
+- id: d4-99
+  objective: Register the model to Unity Catalog using MLflow
+  q: Which TWO ...?
+  options: [..., ..., ..., ..., ...]
+  answer: [A, C]          # letters; the count must match "TWO"/"THREE" in the stem
+  explain: Why the right answers are right and the others are wrong.
+```
+
+## Sources & disclaimer
+
+The exam outline comes from the official Databricks exam guide. Product details were checked against
+[docs.databricks.com](https://docs.databricks.com) in October 2026. Check the
+[official exam page](https://www.databricks.com/learn/certification/genai-engineer-associate) again about two weeks before your exam.
+
+These are personal study materials. They are **not affiliated with or endorsed by Databricks** and contain **no real exam questions**. All practice questions are original.

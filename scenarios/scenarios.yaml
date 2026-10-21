@@ -1,0 +1,300 @@
+# Multi-step design scenarios. Each step is a decision; answers are letters.
+scenarios:
+  - id: s1
+    title: HR Policy Assistant
+    sections: [d1, d2, d4, d6]
+    context: |
+      A 20,000-employee company wants an internal assistant that answers HR policy questions
+      (leave, benefits, travel). Sources: ~4,000 PDFs and DOCX files in a Unity Catalog volume,
+      some scanned. Policies change monthly. Employees must get answers with citations.
+      HR experts want to review answers before launch. Budget is moderate; latency under 3s is fine.
+    steps:
+      - q: The team wants the fastest path to a working, cited Q&A bot with minimal code. What do you recommend first?
+        options:
+          - Agent Bricks Knowledge Assistant pointed at the UC volume
+          - Fine-tune an LLM on all policy documents
+          - A Genie space over the PDF volume
+          - A Multi-Agent Supervisor with no sub-agents
+        answer: [A]
+        explain: Knowledge Assistant builds a cited document Q&A agent from UC volume files with little or no code, and SMEs can improve it with feedback.
+      - q: Later they move to a custom RAG agent for more control. Some PDFs are scanned images. How should they parse documents with the least custom code at scale?
+        options:
+          - ai_parse_document() over read_files(..., format => 'binaryFile')
+          - beautifulsoup4
+          - scrapy
+          - Manually retype scanned PDFs
+        answer: [A]
+        explain: ai_parse_document handles digital and scanned PDFs and Office files (with OCR) directly in SQL.
+      - q: Policies are well structured with section headings. Which chunking strategy?
+        options:
+          - Structure-aware chunking by headings, with section title as metadata
+          - Fixed 50-token chunks
+          - Whole document per chunk
+          - Random splits
+        answer: [A]
+        explain: Header-based chunking keeps each policy section together and adds context from the heading.
+      - q: Policies update monthly; latency isn't critical; corpus is ~2M chunks. Which Vector Search configuration?
+        options:
+          - Standard endpoint (or storage-optimized), Delta Sync index with managed embeddings and TRIGGERED sync after the monthly ETL
+          - Direct Vector Access with manual upserts
+          - Continuous sync on a standard endpoint
+          - No index; send all PDFs in the prompt
+        answer: [A]
+        explain: Infrequent updates call for triggered sync, which is cheapest. Managed embeddings minimize code. At 2M vectors either endpoint type works, so pick based on latency and cost.
+      - q: Before launch, HR experts must test the bot and give feedback that becomes a regression test set. Which TWO?
+        options:
+          - Deploy with agents.deploy() and use the Review App / labeling sessions
+          - Convert SME-corrected answers into an MLflow evaluation dataset (expectations) used with mlflow.genai.evaluate()
+          - Ask SMEs to email screenshots
+          - Skip evaluation; monitor in production only
+          - Fine-tune weekly on SME comments
+        answer: [A, B]
+        explain: The Review App collects structured SME feedback. Turning it into expectations gives repeatable evaluation with ground-truth judges such as Correctness.
+
+  - id: s2
+    title: E-commerce Product Search
+    sections: [d2, d4]
+    context: |
+      An online retailer wants semantic product search with metadata filters (category, price, in-stock).
+      Catalog: 150 million products. Peak 120 queries/second. p95 latency must stay under 150 ms.
+      Product data changes every few minutes (stock, price). The team will invest engineering effort
+      to improve relevance as long as latency is not harmed.
+    steps:
+      - q: Which endpoint type?
+        options:
+          - Standard
+          - Storage-optimized
+          - No endpoint; use SQL LIKE
+          - A Databricks App
+        answer: [A]
+        explain: The latency budget rules out storage-optimized (about +250 ms). Standard handles roughly 320M vectors at high QPS.
+      - q: Which sync mode for near-real-time stock and price changes?
+        options:
+          - Continuous
+          - Triggered weekly
+          - Manual rebuild monthly
+          - No sync
+        answer: [A]
+        explain: Continuous sync keeps the index fresh within seconds and is available on standard endpoints.
+      - q: How to improve relevance without adding query latency?
+        options:
+          - Fine-tune a domain-specific embedding model up front; keep hybrid search and reranking off
+          - Turn on reranking for every query
+          - Increase num_results to 500 and rerank
+          - Use a 4096-dimension general embedding model with hybrid search
+        answer: [A]
+        explain: Reranking and hybrid search add latency. Fine-tuning the embedding model puts the cost up front and leaves query latency unchanged.
+      - q: Users filter by in-stock items under $50 in "shoes". How?
+        options:
+          - Pass metadata filters in similarity_search (e.g. category, price, in_stock)
+          - Put the filters in the query text and hope the embedding captures them
+          - Post-filter in the browser
+          - Create one index per price
+        answer: [A]
+        explain: Metadata filters apply hard constraints deterministically during search.
+
+  - id: s3
+    title: Sales + Policy Multi-Agent Assistant
+    sections: [d1, d3, d4]
+    context: |
+      Sales managers want one chat assistant that can (1) answer numeric questions about pipeline and
+      revenue from governed UC tables, (2) answer questions about discount policies from PDFs, and
+      (3) create a CRM follow-up task via an internal REST API. Users have different row-level access
+      to sales data by region.
+    steps:
+      - q: Which component should answer "What was Q3 revenue in EMEA by product line?"
+        options:
+          - A Genie space over the sales tables
+          - A vector index over sales PDFs
+          - Information Extraction
+          - A summarization model
+        answer: [A]
+        explain: Aggregations over structured tables are a text-to-SQL job, which is what Genie does.
+      - q: How do you combine the Genie space, a policy Knowledge Assistant and the CRM action behind one interface with minimal code?
+        options:
+          - Multi-Agent Supervisor (Agent Bricks) with those as sub-agents/tools
+          - Three separate apps
+          - One giant prompt with all data pasted in
+          - Fine-tune one model on everything
+        answer: [A]
+        explain: The Supervisor routes each request to the right sub-agent or tool.
+      - q: The CRM API has no MCP server. How should the agent call it via MCP?
+        options:
+          - Build a custom MCP server hosted as a Databricks App
+          - Use the managed Vector Search MCP server
+          - Paste the API key into the prompt
+          - Use the Genie MCP server
+        answer: [A]
+        explain: Proprietary APIs with no existing server call for a custom MCP server, and Databricks Apps can host it.
+      - q: Managers must only see revenue for their own regions (UC row filters). Which auth model for data access?
+        options:
+          - On-behalf-of-user so queries run as the end user and row filters apply
+          - A shared admin service principal
+          - A PAT stored in the app frontend
+          - Disable row filters for the agent
+        answer: [A]
+        explain: OBO enforces per-user UC permissions, row filters and column masks.
+      - q: The CRM "create task" tool has side effects. Which guardrail?
+        options:
+          - Confirm with the user before executing and grant the tool least privilege
+          - Let the LLM call it freely
+          - Increase temperature
+          - Remove the tool description
+        answer: [A]
+        explain: Action-taking tools need confirmation and least privilege.
+
+  - id: s4
+    title: Invoice Processing at Scale
+    sections: [d1, d2, d4, d5]
+    context: |
+      Finance receives 300,000 vendor invoices per month (PDF and scanned PNG). They need vendor,
+      invoice number, due date, line totals and currency in a Delta table every night. No chat UI
+      is needed. Invoices contain bank account numbers which must not be stored in clear text.
+    steps:
+      - q: Is this a real-time or batch workload?
+        options:
+          - Batch
+          - Real-time
+          - Streaming chat
+          - Neither
+        answer: [A]
+        explain: Nightly processing with no user waiting is batch.
+      - q: Which Databricks approach extracts the fields with the least custom code?
+        options:
+          - Agent Bricks Information Extraction (or ai_parse_document + ai_extract / ai_query with responseFormat in a scheduled job)
+          - Knowledge Assistant
+          - A Databricks App chatbot
+          - A Genie space
+        answer: [A]
+        explain: Unstructured to structured extraction against a schema is exactly what Information Extraction and ai_extract do.
+      - q: How should bank account numbers be handled?
+        options:
+          - Mask or tokenize them during processing (e.g. ai_mask / regex) and restrict access with UC column masks if retained
+          - Store them in clear text and tell users not to look
+          - Put them in the LLM prompt for verification
+          - Delete the whole invoice
+        answer: [A]
+        explain: Mask early and govern access to whatever you keep.
+      - q: Some rows fail extraction due to unreadable scans. How do you keep the job running?
+        options:
+          - Use failOnError => false and route failed rows to a retry/review table
+          - Let the whole job fail
+          - Lower temperature
+          - Switch to real-time serving
+        answer: [A]
+        explain: Per-row error handling keeps the batch running so failures can be handled separately.
+
+  - id: s5
+    title: Customer Support Chatbot Launch & Monitoring
+    sections: [d3, d5, d6]
+    context: |
+      A public-facing support chatbot (RAG + order-lookup tool) is deployed with Agent Framework.
+      Leadership wants: no toxic output, no PII leaks, cost control, visibility into quality on
+      live traffic, and a way to catch regressions before each release.
+    steps:
+      - q: Which configuration blocks toxic content and masks PII on requests and responses with no code?
+        options:
+          - AI Gateway guardrails (safety filter + PII masking) on the endpoint
+          - A longer system prompt
+          - Unity Catalog lineage
+          - Triggered sync
+        answer: [A]
+        explain: Gateway guardrails are configuration-only safety and PII controls.
+      - q: Which TWO help control cost?
+        options:
+          - Per-user rate limits in AI Gateway
+          - Monitoring token usage in system.serving.endpoint_usage
+          - Running the most expensive judge on 100% of traffic
+          - Using the largest LLM for intent classification
+          - Disabling scale-to-zero on idle dev endpoints
+        answer: [A, B]
+        explain: Rate limits cap usage, and usage tables show where the tokens go.
+      - q: How do you continuously measure answer quality on live traffic without ground truth?
+        options:
+          - Register Safety, RelevanceToQuery and RetrievalGroundedness scorers and start them with a sampling rate
+          - Run Correctness on all live traffic
+          - Wait for customer complaints
+          - Recompute embeddings daily
+        answer: [A]
+        explain: Production monitoring needs judges that don't use ground truth, applied with sampling.
+      - q: How do you prevent quality regressions in the next release?
+        options:
+          - Run mlflow.genai.evaluate() on a fixed evaluation dataset (including failures found in production) as a CI quality gate
+          - Deploy and watch
+          - Only unit-test the UI
+          - Increase rate limits
+        answer: [A]
+        explain: An evaluation dataset that grows from production failures is your regression test suite.
+
+  - id: s6
+    title: Prompt & Model Promotion Pipeline
+    sections: [d4]
+    context: |
+      A team runs dev, staging and prod workspaces. They change prompts weekly and agent code monthly.
+      Requirements: gated promotion, full version history, instant rollback, reproducible deployments.
+    steps:
+      - q: Where should prompts live?
+        options:
+          - MLflow Prompt Registry in Unity Catalog, promoted via aliases
+          - Hard-coded strings in the agent
+          - A JSON file overwritten by CI
+          - A Delta table overwritten on deploy
+        answer: [A]
+        explain: Immutable versions plus movable aliases give gated promotion and rollback.
+      - q: How should the agent reference the prompt so promotion needs no redeploy?
+        options:
+          - load_prompt("prompts:/catalog.schema.name@production") at runtime
+          - load_prompt("prompts:/catalog.schema.name/3") hard-coded
+          - Copy the text into the code at build time
+          - Read from the developer's notebook
+        answer: [A]
+        explain: An alias reference picks up whatever version the alias points to.
+      - q: How should infrastructure (endpoints, jobs, apps) be deployed per environment?
+        options:
+          - Asset Bundles (Declarative Automation Bundles) with dev/staging/prod targets run from CI
+          - Clicking in the UI in each workspace
+          - Copying notebooks by hand
+          - Email instructions to admins
+        answer: [A]
+        explain: Bundles make deployments declarative and reproducible across targets.
+      - q: Model promotion to prod should be reversible instantly. How?
+        options:
+          - Use UC model aliases (@champion) and serve by alias / update the endpoint to the alias version
+          - Use legacy Production stage
+          - Delete old versions
+          - Rename the model
+        answer: [A]
+        explain: Aliases replace stages in Unity Catalog.
+
+  - id: s7
+    title: Research Assistant with MCP Tools
+    sections: [d4]
+    context: |
+      A research assistant agent needs: (1) governed UC functions for internal calculations,
+      (2) a third-party web-search vendor that offers an MCP server and requires an API key,
+      (3) internal documents in a Vector Search index. Maintenance overhead must be minimal.
+    steps:
+      - q: How should the agent access UC functions and the Vector Search index?
+        options:
+          - Databricks managed MCP servers for UC functions and Vector Search
+          - A custom MCP server on a VM
+          - Copy data into the prompt
+          - An external MCP server
+        answer: [A]
+        explain: Managed servers need no maintenance and are UC-governed.
+      - q: How should the web-search vendor be integrated?
+        options:
+          - As an external MCP server via a UC connection, storing the API key in Databricks Secrets (or managed OAuth)
+          - Rebuild the vendor's service as a custom MCP server
+          - Hard-code the key in the agent
+          - Use the Genie MCP server
+        answer: [A]
+        explain: External MCP servers plus secrets is the least-maintenance, secure option.
+      - q: Which statement is a red flag for this design?
+        options:
+          - Wrapping all three sources into one new custom MCP server "for simplicity"
+          - Using UC permissions to govern tool access
+          - Storing credentials in secrets
+          - Declaring resources for automatic auth
+        answer: [A]
+        explain: A custom wrapper adds maintenance when managed and external servers already exist.

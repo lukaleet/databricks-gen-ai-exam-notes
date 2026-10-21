@@ -1,0 +1,127 @@
+# Glossary / flashcards. `now` = current docs name (Oct 2026) if it differs from the exam's name.
+terms:
+  # ---- Core GenAI concepts
+  - {term: LLM, section: d1, def: "Large Language Model. A transformer model trained to predict the next token. It can generate, summarize, classify, extract and reason over text."}
+  - {term: Token, section: d1, def: "Unit of text a model processes (roughly ¾ of an English word). Context limits, cost and rate limits are counted in tokens."}
+  - {term: Context window, section: d3, def: "Maximum number of tokens (prompt + output) a model can handle in one request."}
+  - {term: Temperature, section: d1, def: "Sampling randomness. Low (0–0.2) = deterministic, good for extraction and formatting. High = more creative and varied."}
+  - {term: System prompt, section: d1, def: "Instruction message that sets the model's role, rules, scope and format for the whole conversation."}
+  - {term: Few-shot prompting, section: d1, def: "Including a few input→output examples in the prompt to show the desired behaviour and format."}
+  - {term: Zero-shot prompting, section: d1, def: "Asking the model to perform a task with instructions only, without examples."}
+  - {term: Chain-of-thought, section: d1, def: "Prompting the model to reason step by step before answering. Improves multi-step reasoning at the cost of more tokens."}
+  - {term: Structured outputs, section: d1, def: "Constraining generation to a JSON schema (response_format). Gives the strongest guarantee of a parseable format."}
+  - {term: Prompt chaining, section: d1, def: "Using one LLM call's output as the input of the next to break a task into steps."}
+  - {term: Hallucination, section: d3, def: "A fluent but false or unsupported output. Mitigated with grounding (RAG), instructions, and groundedness checks."}
+  - {term: RAG, section: d2, def: "Retrieval-Augmented Generation. Retrieve relevant context (e.g. via vector search) and add it to the prompt so answers are grounded in your data."}
+  - {term: Fine-tuning, section: d3, def: "Further training a model on task data. Good for style, format and domain language. Not ideal for injecting frequently changing facts."}
+  - {term: Agent, section: d1, def: "An LLM-driven system that decides which tools to call, and in what order, to accomplish a goal (reason → act → observe loop)."}
+  - {term: ReAct, section: d1, def: "Reason + Act. An agent pattern that alternates reasoning steps with tool calls and observations."}
+  - {term: Tool / function calling, section: d1, def: "A model capability to emit structured calls to external functions (tools) with typed arguments."}
+  - {term: Multi-agent system, section: d1, def: "Several specialized agents coordinated by a supervisor/router that delegates each request to the right agent."}
+  - {term: Mixture-of-Experts (MoE), section: d6, def: "Architecture that routes each token to a few expert sub-networks. Large capacity with lower compute per token."}
+
+  # ---- Data prep / retrieval
+  - {term: Chunking, section: d2, def: "Splitting documents into smaller passages for embedding and retrieval. Size and overlap trade precision against context."}
+  - {term: Chunk overlap, section: d2, def: "Tokens shared by adjacent chunks to keep context across boundaries. More overlap = more chunks."}
+  - {term: Recursive character splitting, section: d2, def: "Splits on progressively smaller separators (paragraph → line → sentence → word) until chunks fit the size."}
+  - {term: Semantic chunking, section: d2, def: "Splits text where embedding similarity between consecutive sentences drops (topic boundaries)."}
+  - {term: Parent-child retrieval, section: d2, def: "Embed small chunks for precise matching but return their larger parent section to the LLM (small-to-big)."}
+  - {term: Embedding, section: d2, def: "A dense vector representing text meaning. Similar meanings give nearby vectors."}
+  - {term: Embedding dimension, section: d3, def: "Length of the embedding vector (e.g. 384, 768, 1024). Higher = more storage and compute, often better quality."}
+  - {term: Bi-encoder, section: d2, def: "Encodes query and document separately into vectors (fast, used for first-stage retrieval)."}
+  - {term: Cross-encoder, section: d2, def: "Scores a query–document pair jointly. More accurate but slower. Used for re-ranking."}
+  - {term: Re-ranking, section: d2, def: "Second-stage scoring of retrieved candidates with a more accurate model to put the most relevant chunks first."}
+  - {term: Hybrid search, section: d2, def: "Combines vector similarity with keyword (BM25) search, fused with Reciprocal Rank Fusion. Helps with exact terms and codes."}
+  - {term: BM25, section: d2, def: "Classic keyword relevance scoring function used in full-text search."}
+  - {term: HNSW, section: d4, def: "Hierarchical Navigable Small World. The graph-based approximate nearest neighbour algorithm used by Databricks Vector/AI Search."}
+  - {term: Precision@k, section: d2, def: "Fraction of the top-k retrieved items that are relevant."}
+  - {term: Recall@k, section: d2, def: "Fraction of all relevant items that appear in the top-k."}
+  - {term: MRR, section: d2, def: "Mean Reciprocal Rank. Average of 1/rank of the first relevant result."}
+  - {term: NDCG, section: d2, def: "Normalized Discounted Cumulative Gain. Ranking quality metric with graded relevance."}
+  - {term: Query rewriting / expansion, section: d3, def: "Transforming the user query (add context, synonyms, multiple variants, HyDE) to improve retrieval."}
+  - {term: pytesseract, section: d2, def: "Python wrapper for Tesseract OCR. Extracts text from images and scanned documents."}
+  - {term: unstructured, section: d2, def: "Python library that partitions many document formats (PDF, DOCX, PPTX, HTML, email) into typed elements."}
+  - {term: ai_parse_document, section: d2, def: "Databricks SQL AI Function (GA Apr 2026) that parses PDF, Office and image files into structured elements (text, tables, figures) with OCR."}
+  - {term: Change Data Feed (CDF), section: d2, def: "Delta table feature that records row-level changes. Required for Delta Sync vector indexes."}
+  - {term: Unity Catalog Volume, section: d2, def: "Governed storage location in Unity Catalog for non-tabular files (e.g. raw PDFs), path /Volumes/catalog/schema/volume/."}
+  - {term: Auto Loader, section: d2, def: "Incremental file ingestion (cloudFiles) that processes only new files as they arrive."}
+
+  # ---- Databricks platform
+  - {term: Unity Catalog, section: d5, def: "Databricks' unified governance layer for data and AI assets (tables, volumes, models, functions, indexes, prompts): permissions, lineage, auditing."}
+  - {term: Mosaic AI Vector Search, now: Databricks AI Search, section: d4, def: "Managed vector (and now keyword/full-text) search service integrated with Unity Catalog. Renamed to AI Search in June 2026."}
+  - {term: Vector Search endpoint, section: d4, def: "Compute that hosts indexes. Standard (low latency, ~320M vectors) or Storage-optimized (1B+ vectors, cheaper, ~+250ms latency, triggered sync only)."}
+  - {term: Delta Sync Index, section: d4, def: "Vector index that automatically syncs from a source Delta table (CDF). Embeddings are managed (computed by Databricks) or self-managed (provided)."}
+  - {term: Direct Vector Access Index, section: d4, def: "Vector index where you upsert and delete vectors yourself through the API. No source-table sync."}
+  - {term: Triggered vs Continuous sync, section: d4, def: "Triggered = update when index.sync() is called (cheaper). Continuous = near real-time streaming updates (standard endpoints only, costlier)."}
+  - {term: Foundation Model APIs, section: d4, def: "Databricks-hosted LLMs and embedding models served via OpenAI-compatible endpoints. Pay-per-token or provisioned throughput."}
+  - {term: Pay-per-token, section: d4, def: "Foundation Model API mode billed per token on shared endpoints. Best for development and variable or low traffic."}
+  - {term: Provisioned throughput, section: d4, def: "Foundation Model API mode with dedicated capacity for production performance and fine-tuned models."}
+  - {term: External models, section: d4, def: "Serving endpoints that proxy third-party model providers (OpenAI, Anthropic, Bedrock…) with centralized credentials and governance."}
+  - {term: Model Serving, section: d4, def: "Databricks serverless real-time inference for custom models, agents, foundation and external models."}
+  - {term: AI Playground, section: d3, def: "UI to chat with and compare LLMs, test prompts and tools, and prototype agents without code."}
+  - {term: ai_query, section: d4, def: "SQL function for (batch) inference against any serving endpoint: ai_query(endpoint, request, [returnType, failOnError, modelParameters, responseFormat])."}
+  - {term: AI Functions, section: d1, def: "Built-in SQL functions for GenAI tasks: ai_query, ai_classify, ai_extract, ai_summarize, ai_mask, ai_translate, ai_analyze_sentiment, ai_parse_document…"}
+  - {term: Lakebase, section: d4, def: "Databricks managed Postgres (OLTP). Low-latency transactional store for agent memory, state and app data."}
+  - {term: Online / feature tables, section: d4, def: "Low-latency key-based serving of structured features (e.g. customer attributes) for real-time apps."}
+  - {term: Databricks Apps, section: d4, def: "Host web apps (Streamlit, Dash, Gradio, React…) inside Databricks with SSO. App service principal or on-behalf-of-user authorization."}
+  - {term: Genie space, now: Genie Agent, section: d3, def: "Natural-language → SQL interface over curated Unity Catalog tables. Renamed Genie Agents in July 2026."}
+  - {term: Genie Conversation API, section: d3, def: "REST API to start conversations with a Genie space, send follow-ups and fetch query results from external apps (Slack, Teams, custom UIs)."}
+  - {term: Databricks Asset Bundles, now: Declarative Automation Bundles, section: d4, def: "Infrastructure-as-code (databricks.yml) for deploying jobs, pipelines, endpoints and apps across dev/staging/prod targets."}
+  - {term: Databricks Assistant, now: Genie Code, section: d3, def: "In-product AI coding assistant. Renamed Genie Code in March 2026."}
+  - {term: Databricks Marketplace, section: d3, def: "Marketplace for datasets, models and apps from Databricks and partners, with clear licensing terms."}
+  - {term: Secrets, section: d4, def: "Databricks secret scopes store credentials. Reference them in endpoint env vars as {{secrets/scope/key}}."}
+
+  # ---- Agent Bricks / Agent Framework / MLflow
+  - {term: Agent Bricks, section: d1, def: "Databricks offering to build task-specific agents (Knowledge Assistant, Multi-Agent Supervisor, Information Extraction…) with little or no code, with built-in evaluation and optimization."}
+  - {term: Knowledge Assistant, section: d1, def: "Agent Bricks Q&A chatbot over documents (UC volumes, tables, vector indexes) with citations. Improves with SME feedback. Marked legacy Oct 2026."}
+  - {term: Multi-Agent Supervisor, now: Supervisor Agent, section: d1, def: "Agent Bricks agent that coordinates sub-agents and tools (Genie spaces, agent endpoints, UC functions, MCP). Marked legacy Oct 2026."}
+  - {term: Information Extraction, section: d1, def: "Agent Bricks agent that converts unstructured documents into structured fields with a defined schema. Built on ai_extract."}
+  - {term: Mosaic AI Agent Framework, section: d3, def: "Tools to author, log, evaluate, deploy (agents.deploy) and monitor agents on Databricks, built on MLflow."}
+  - {term: ResponsesAgent, section: d3, def: "Recommended MLflow interface for authoring agents (OpenAI Responses-compatible). Wraps any framework. ChatAgent/ChatModel are legacy."}
+  - {term: agents.deploy(), section: d4, def: "databricks.agents function that deploys a UC-registered agent to a serving endpoint, with Review App, tracing and inference tables."}
+  - {term: Models from code, section: d3, def: "Logging a model by pointing MLflow at a Python file (python_model='agent.py') that calls mlflow.models.set_model(), instead of pickling."}
+  - {term: pyfunc, section: d4, def: "MLflow's generic Python model flavor (PythonModel with load_context/predict) for custom logic and pre/post-processing."}
+  - {term: Model signature, section: d4, def: "Input/output schema of an MLflow model. Required for Unity Catalog registration. Inferred from input_example."}
+  - {term: Model alias, section: d4, def: "Mutable named pointer to a model version in UC (e.g. @champion). Replaces legacy stages for promotion and rollback."}
+  - {term: MLflow Tracing, section: d6, def: "Records each request as a trace of spans (LLM, retriever, tool) with inputs, outputs, latency and tokens. Enabled via autolog or @mlflow.trace."}
+  - {term: Span type RETRIEVER, section: d2, def: "Trace span type marking retrieval steps. Retrieval judges read retrieved context from these spans."}
+  - {term: MLflow Prompt Registry, section: d4, def: "Versioned prompt store in Unity Catalog: register_prompt, load_prompt, set_prompt_alias. Immutable versions, mutable aliases, {{var}} templates."}
+  - {term: "mlflow.genai.evaluate()", section: d6, def: "MLflow 3 evaluation harness. Runs predict_fn (or uses existing traces) over a dataset and applies scorers/judges."}
+  - {term: Scorer, section: d6, def: "A function or judge that assesses an output/trace and returns feedback (bool, number, text, Feedback). Built-in, @scorer custom, or LLM judges."}
+  - {term: LLM judge, section: d6, def: "An LLM used to grade outputs against criteria (relevance, safety, groundedness, guidelines…)."}
+  - {term: Ground truth / expectations, section: d6, def: "Reference answers or facts (expected_response, expected_facts) in an eval dataset. Needed by Correctness, RetrievalSufficiency, ToolCallCorrectness."}
+  - {term: Guidelines judge, section: d6, def: "Built-in LLM judge that checks outputs against natural-language rules you write (pass/fail)."}
+  - {term: make_judge, section: d6, def: "MLflow API to create a custom LLM judge from templated instructions ({{ inputs }}, {{ outputs }}, {{ expectations }}, {{ trace }})."}
+  - {term: Evaluation dataset, section: d6, def: "Curated set of inputs (and optional expectations) stored in UC, used to evaluate versions consistently."}
+  - {term: Review App, section: d6, def: "UI for SMEs and stakeholders to chat with an agent and label traces (labeling sessions) to give structured feedback."}
+  - {term: Labeling session, section: d6, def: "A set of traces assigned to SMEs with label schemas (e.g. correctness, expected facts) in the Review App."}
+  - {term: Judge alignment, section: d6, def: "Tuning an LLM judge with SME-labeled feedback so its judgments match expert opinion."}
+  - {term: Production monitoring, section: d6, def: "MLflow 3 monitoring: registered scorers (.register().start(sampling_config)) evaluate a sample of live traces. Called 'Agent Monitoring' on the exam."}
+
+  # ---- MCP
+  - {term: MCP, section: d4, def: "Model Context Protocol. Open standard for agents to discover and call tools, resources and prompts exposed by servers."}
+  - {term: Managed MCP server, section: d4, def: "Databricks-hosted MCP servers for UC functions, Vector Search indexes, Genie spaces (and more). Zero maintenance, UC-governed."}
+  - {term: External MCP server, section: d4, def: "Third-party MCP server connected through a Unity Catalog connection, with credentials in secrets or managed OAuth."}
+  - {term: Custom MCP server, section: d4, def: "Your own MCP server, typically hosted as a Databricks App, for proprietary tools and APIs."}
+
+  # ---- Governance / gateway
+  - {term: AI Gateway, now: Unity Gateway, section: d6, def: "Governance layer for serving endpoints: inference tables, usage tracking, rate limits, guardrails, traffic splitting, fallbacks. Unity Gateway (GA Aug 2026) extends it to MCP, agents and tools via UC."}
+  - {term: Inference tables, section: d6, def: "Automatic logging of serving endpoint requests and responses (and agent traces) to a Unity Catalog Delta table."}
+  - {term: system.serving.endpoint_usage, section: d6, def: "System table with per-request token usage and requester for gateway-enabled endpoints."}
+  - {term: Rate limiting, section: d6, def: "QPM/TPM caps per endpoint, user, group or service principal to control cost and abuse."}
+  - {term: Guardrails, section: d3, def: "Input and output controls (safety filters, PII detection/masking, topic restrictions, validation) that prevent harmful outcomes."}
+  - {term: Prompt injection, section: d5, def: "Attack where input (direct) or retrieved content (indirect) tries to override the model's instructions."}
+  - {term: Jailbreak, section: d5, def: "Prompting technique to bypass a model's safety behaviour (role-play, obfuscation…)."}
+  - {term: Llama Guard, section: d5, def: "Safety classifier model used to screen prompts and responses for unsafe content."}
+  - {term: ai_mask, section: d5, def: "SQL AI Function that masks specified entity types (e.g. person, email, phone) in text."}
+  - {term: Column mask / row filter, section: d5, def: "Unity Catalog dynamic masking and filtering evaluated per user. Applies automatically when agents run on behalf of the user."}
+  - {term: Automatic authentication passthrough, section: d4, def: "Declare resources when logging an agent. Databricks issues short-lived least-privilege credentials for them at serving time."}
+  - {term: On-behalf-of-user (OBO) auth, section: d4, def: "Agent or app acts with the end user's identity and scopes, so UC permissions apply per user (ModelServingUserCredentials, x-forwarded-access-token)."}
+  - {term: CC BY-NC, section: d5, def: "Creative Commons Attribution-NonCommercial license. Commercial use is not allowed."}
+  - {term: Model card, section: d3, def: "Documentation of a model's intended use, license, training data, context length, size, evaluations and limitations."}
+
+  # ---- Metrics
+  - {term: ROUGE, section: d3, def: "Recall-oriented n-gram overlap metric. Standard for summarization."}
+  - {term: BLEU, section: d3, def: "Precision-oriented n-gram overlap metric. Standard for translation."}
+  - {term: Perplexity, section: d3, def: "How 'surprised' a language model is by text. Lower = better fit."}
+  - {term: Time-to-first-token, section: d6, def: "Latency until the first output token streams back. Key for chat UX."}
