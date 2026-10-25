@@ -6,6 +6,8 @@ weight: 14
 
 # Section 2: Data Preparation (14%)
 
+> 🗺️ **Visual learner?** This section's architecture is drawn in the [Visual guide](#/notes/visual).
+
 **Objectives**
 
 1. Apply a chunking strategy for a given document structure and model constraints

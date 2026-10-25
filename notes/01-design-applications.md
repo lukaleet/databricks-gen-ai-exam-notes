@@ -6,6 +6,8 @@ weight: 14
 
 # Section 1: Design Applications (14%)
 
+> 🗺️ **Visual learner?** This section's architecture is drawn in the [Visual guide](#/notes/visual).
+
 **Objectives**
 
 1. Design a prompt that elicits a specifically formatted response

@@ -6,6 +6,8 @@ weight: 8
 
 # Section 5: Governance (8%)
 
+> 🗺️ **Visual learner?** This section's architecture is drawn in the [Visual guide](#/notes/visual).
+
 **Objectives**
 
 1. Use masking techniques as guard rails to meet a performance objective

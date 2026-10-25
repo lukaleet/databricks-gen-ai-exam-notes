@@ -20,6 +20,15 @@
   --radius: 10px;
   --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* diagram palette: fill / stroke per kind */
+  --dg-data-f: #dbeafe; --dg-data-s: #2563eb;
+  --dg-model-f: #ede9fe; --dg-model-s: #7c3aed;
+  --dg-tool-f: #fef3c7; --dg-tool-s: #c27803;
+  --dg-gov-f: #ffe4e6; --dg-gov-s: #e11d48;
+  --dg-eval-f: #dcfce7; --dg-eval-s: #16a34a;
+  --dg-app-f: #ccfbf1; --dg-app-s: #0f766e;
+  --dg-plain-f: #ffffff; --dg-plain-s: #9ca3af;
+  --dg-edge: #6b7280;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -27,6 +36,7 @@
     --border: #2e3338; --accent: #2dd4bf; --accent-2: #5eead4; --accent-soft: #134e4a;
     --ok: #4ade80; --ok-soft: #14532d; --bad: #f87171; --bad-soft: #4c1d1d; --warn: #facc15; --warn-soft: #422006;
     --code-bg: #15181b; --shadow: 0 1px 2px rgba(0,0,0,.4); --on-accent: #062421;
+    --dg-data-f: #172554; --dg-data-s: #60a5fa; --dg-model-f: #2e1065; --dg-model-s: #a78bfa; --dg-tool-f: #422006; --dg-tool-s: #fbbf24; --dg-gov-f: #4c0519; --dg-gov-s: #fb7185; --dg-eval-f: #052e16; --dg-eval-s: #4ade80; --dg-app-f: #134e4a; --dg-app-s: #2dd4bf; --dg-plain-f: #1a1d20; --dg-plain-s: #6b7280; --dg-edge: #9aa1ab;
   }
 }
 :root[data-theme="dark"] {
@@ -34,6 +44,7 @@
   --border: #2e3338; --accent: #2dd4bf; --accent-2: #5eead4; --accent-soft: #134e4a;
   --ok: #4ade80; --ok-soft: #14532d; --bad: #f87171; --bad-soft: #4c1d1d; --warn: #facc15; --warn-soft: #422006;
   --code-bg: #15181b; --shadow: 0 1px 2px rgba(0,0,0,.4); --on-accent: #062421;
+  --dg-data-f: #172554; --dg-data-s: #60a5fa; --dg-model-f: #2e1065; --dg-model-s: #a78bfa; --dg-tool-f: #422006; --dg-tool-s: #fbbf24; --dg-gov-f: #4c0519; --dg-gov-s: #fb7185; --dg-eval-f: #052e16; --dg-eval-s: #4ade80; --dg-app-f: #134e4a; --dg-app-s: #2dd4bf; --dg-plain-f: #1a1d20; --dg-plain-s: #6b7280; --dg-edge: #9aa1ab;
 }
 
 * { box-sizing: border-box; }
@@ -158,3 +169,54 @@ input[type=search] { width: 100%; }
 .main { min-width: 0; }
 .q-meta .tag { white-space: normal; }
 .q-stem, .opt span { overflow-wrap: anywhere; }
+
+/* ---------- diagrams (scripts/diagrams.py) ---------- */
+figure.diagram { margin: 18px 0 8px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 14px 10px; box-shadow: var(--shadow); }
+figure.diagram figcaption { color: var(--muted); font-size: 13.5px; margin-top: 8px; line-height: 1.5; }
+.fig-scroll { overflow-x: auto; }
+svg.dg { display: block; width: 100%; height: auto; min-width: var(--fig-min, 600px); color: var(--text); }
+.dg text { fill: var(--text); font-family: var(--font); }
+.dg .dg-label { font-size: 13px; font-weight: 650; }
+.dg .dg-sub { font-size: 11px; fill: var(--muted); }
+.dg .dg-mono { font-family: var(--mono); font-size: 10.5px; }
+.dg .dg-strong { fill: var(--text); font-weight: 600; }
+.dg .dg-note { font-size: 12px; fill: var(--muted); }
+.dg .dg-glabel { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; fill: var(--muted); }
+.dg .dg-elabel { font-size: 11px; font-weight: 600; fill: var(--muted); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.dg .dg-govtext { fill: var(--dg-gov-s); }
+.dg .dg-oktext { fill: var(--dg-eval-s); }
+.dg .dg-box { stroke-width: 1.5; }
+.dg .dg-hl { stroke-width: 2.6; }
+.dg .dg-group { fill: none; stroke-width: 1.2; stroke-dasharray: 5 4; }
+.dg .dg-edge { stroke: var(--dg-edge); stroke-width: 1.6; }
+.dg .dg-guide { stroke: var(--dg-plain-s); stroke-width: 1; }
+.dg .dg-dash { stroke-dasharray: 5 4; }
+.dg .dg-head { fill: var(--dg-edge); }
+.dg .dg-hot { stroke: var(--accent); }
+.dg .dg-head.dg-hot { fill: var(--accent); stroke: none; }
+.dg .dg-num { fill: var(--accent); }
+.dg .dg-numt { fill: var(--on-accent); font-size: 11px; font-weight: 700; }
+.dg .k-data { fill: var(--dg-data-f); stroke: var(--dg-data-s); }
+.dg .dg-group.k-data { fill: none; }
+.dg .k-model { fill: var(--dg-model-f); stroke: var(--dg-model-s); }
+.dg .dg-group.k-model { fill: none; }
+.dg .k-tool { fill: var(--dg-tool-f); stroke: var(--dg-tool-s); }
+.dg .dg-group.k-tool { fill: none; }
+.dg .k-gov { fill: var(--dg-gov-f); stroke: var(--dg-gov-s); }
+.dg .dg-group.k-gov { fill: none; }
+.dg .k-eval { fill: var(--dg-eval-f); stroke: var(--dg-eval-s); }
+.dg .dg-group.k-eval { fill: none; }
+.dg .k-app { fill: var(--dg-app-f); stroke: var(--dg-app-s); }
+.dg .dg-group.k-app { fill: none; }
+.dg .k-plain { fill: var(--dg-plain-f); stroke: var(--dg-plain-s); }
+.dg .dg-group.k-plain { fill: none; }
+
+.dg-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 10px 0 18px; font-size: 13.5px; }
+.dg-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.dg-legend i { width: 16px; height: 12px; border-radius: 3px; border: 1.5px solid; display: inline-block; }
+.dg-legend i.k-data { background: var(--dg-data-f); border-color: var(--dg-data-s); }
+.dg-legend i.k-model { background: var(--dg-model-f); border-color: var(--dg-model-s); }
+.dg-legend i.k-tool { background: var(--dg-tool-f); border-color: var(--dg-tool-s); }
+.dg-legend i.k-gov { background: var(--dg-gov-f); border-color: var(--dg-gov-s); }
+.dg-legend i.k-eval { background: var(--dg-eval-f); border-color: var(--dg-eval-s); }
+.dg-legend i.k-app { background: var(--dg-app-f); border-color: var(--dg-app-s); }

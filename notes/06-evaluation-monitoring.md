@@ -6,6 +6,8 @@ weight: 12
 
 # Section 6: Evaluation and Monitoring (12%)
 
+> 🗺️ **Visual learner?** This section's architecture is drawn in the [Visual guide](#/notes/visual).
+
 **Objectives**
 
 1. Select an LLM choice (size and architecture) based on a set of quantitative evaluation metrics

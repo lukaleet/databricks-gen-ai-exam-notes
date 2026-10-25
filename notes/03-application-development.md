@@ -6,6 +6,8 @@ weight: 30
 
 # Section 3: Application Development (30%)
 
+> 🗺️ **Visual learner?** This section's architecture is drawn in the [Visual guide](#/notes/visual).
+
 **Objectives**
 
 1. Select Langchain/similar tools for use in a Generative AI application

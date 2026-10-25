@@ -8,6 +8,9 @@ import glob, json, os, re, sys
 import markdown
 import yaml
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import diagrams  # noqa: E402  (scripts/diagrams.py: inline SVG figures for [[diagram:id]] markers)
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REPO_URL = "https://github.com/lukaleet/databricks-gen-ai-exam-notes"
 SECTIONS = {
@@ -28,10 +31,20 @@ def front_matter(text):
     return (yaml.safe_load(m.group(1)), text[m.end():]) if m else ({}, text)
 
 
+def insert_diagrams(body, where):
+    def figure(m):
+        if m.group(1) not in diagrams.DIAGRAMS:
+            errors.append(f"{where}: unknown diagram {m.group(1)}")
+            return ""
+        return "\n" + diagrams.render(m.group(1)) + "\n"
+    return re.sub(r"^\[\[diagram:([\w-]+)\]\]$", figure, body, flags=re.M)
+
+
 def build_notes():
     notes = []
     for path in sorted(glob.glob(os.path.join(ROOT, "notes", "*.md"))):
         meta, body = front_matter(open(path, encoding="utf-8").read())
+        body = insert_diagrams(body, os.path.basename(path))
         md = markdown.Markdown(extensions=["tables", "fenced_code", "toc", "sane_lists"],
                                extension_configs={"toc": {"toc_depth": "2-3"}})
         html = md.convert(body)
@@ -133,6 +146,7 @@ def main():
         n = sum(q["section"] == sid for q in content["questions"])
         if n < s["mock"]:
             errors.append(f"section {sid} has {n} questions < mock quota {s['mock']}")
+    errors.extend(f"diagram label overflow: {w}" for w in sorted(set(diagrams.warnings)))
     if errors:
         print("BUILD FAILED:\n  " + "\n  ".join(errors))
         sys.exit(1)

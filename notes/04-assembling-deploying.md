@@ -6,6 +6,8 @@ weight: 22
 
 # Section 4: Assembling and Deploying Applications (22%)
 
+> 🗺️ **Visual learner?** This section's architecture is drawn in the [Visual guide](#/notes/visual).
+
 **Objectives**
 
 1. Code a chain using a pyfunc model with pre- and post-processing

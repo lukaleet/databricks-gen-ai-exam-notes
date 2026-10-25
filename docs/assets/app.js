@@ -65,6 +65,7 @@
       ${link("#/plan", "📅 Daily plan", `<span class="pct">${planProgress().pct}%</span>`)}
       ${link("#/notes/plan", "🗓️ Study plan & checklist")}
       ${link("#/notes/overview", "⚠️ Exam overview & renames")}
+      ${link("#/notes/visual", "🗺️ Visual guide (diagrams)")}
       <div class="group">Study notes</div>${secLinks}
       <div class="group">Practice</div>
       ${link("#/practice", "✍️ Practice questions")}
