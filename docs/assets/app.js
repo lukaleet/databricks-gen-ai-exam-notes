@@ -66,6 +66,7 @@
       ${link("#/notes/plan", "🗓️ Study plan & checklist")}
       ${link("#/notes/overview", "⚠️ Exam overview & renames")}
       ${link("#/notes/visual", "🗺️ Visual guide (diagrams)")}
+      ${link("#/notes/today", "🧭 Today's stack: what to use when")}
       <div class="group">Study notes</div>${secLinks}
       <div class="group">Practice</div>
       ${link("#/practice", "✍️ Practice questions")}

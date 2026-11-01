@@ -596,9 +596,49 @@ def eval_monitor():
     return d
 
 
+def today_stack():
+    d = Diagram("today-stack", 900, 470,
+                "Today's Databricks agent stack: business users chat in Genie One over Genie Agents; developers build agents "
+                "with the Agent Bricks CLI that run on Agent Runtime and call tools, AI Search, a sandbox and managed memory; "
+                "Unity Gateway governs model and tool access, MLflow 3 observes quality, Unity Catalog governs everything.",
+                "Low-code on the left, code-first in the middle, shared services on the right. Every model and tool call goes "
+                "through Unity Gateway, and the same MLflow 3 and Unity Catalog layers sit under both paths.")
+    # low-code path
+    d.box("biz", 20, 40, 190, 48, "Business user", kind="app")
+    d.box("one", 20, 120, 190, 56, "Genie One", ["no-code chat over data"], kind="tool", accent=True)
+    d.box("gag", 20, 216, 190, 56, "Genie Agents", ["curated by data teams"], kind="tool")
+    d.arrow("biz", "one", "asks")
+    d.arrow("one", "gag", "answers from")
+    # code-first path
+    d.group(232, 20, 418, 300, "Agent Bricks (code-first)", kind="app")
+    d.box("code", 250, 50, 380, 56, "Your agent code", ["LangGraph · OpenAI Agents SDK · Omnigent"], kind="app")
+    d.box("srv", 250, 136, 380, 50, "Agent server", ["DurableAgentServer · /api/invocations"], kind="app")
+    d.box("rt", 250, 216, 380, 50, "Agent Runtime", ["managed compute on Databricks Apps"], kind="app", accent=True)
+    d.arrow("code", "srv", "wrapped by", sides="bt")
+    d.arrow("srv", "rt", "runs on", sides="bt")
+    d.chip(252, 280, 220, "agentbricks init → dev → deploy")
+    d.arrow("code", "gag", "as a tool", sides="lb", via=[(222, 78), (222, 300), (115, 300)], dashed=True,
+            lpos=(168, 294))
+    # shared services
+    svc = [("mcp", "Tools via MCP", "Databricks · external · custom", "tool"),
+           ("srch", "AI Search", "retrieval over indexes", "data"),
+           ("sbx", "Databricks Sandbox", "runs agent-written code", "tool"),
+           ("mem", "Memory + sessions", "managed, on Lakebase", "data")]
+    for i, (k, l, s, kind) in enumerate(svc):
+        d.box(k, 670, 30 + i * 74, 210, 56, l, [s], kind=kind)
+        d.arrow("code", k, sides="rl", aoff=(i - 1.5) * 0.2)
+    # governance and quality underneath
+    d.box("gw", 20, 340, 860, 50, "Unity Gateway",
+          ["models · MCP servers · skills: routing, budgets, rate limits, guardrails, inference + usage tables"], kind="gov")
+    d.arrow("rt", "gw", "model + tool calls", sides="bt", aoff=0.35, boff=0.143, lpos=(564, 316), lanchor="end")
+    d.box("ml", 20, 404, 420, 52, "MLflow 3", ["tracing · evaluate() · judges · monitoring"], kind="eval")
+    d.box("uc", 460, 404, 420, 52, "Unity Catalog", ["governs data, tools, models and agents"], kind="gov")
+    return d
+
+
 DIAGRAMS = {f().id: f for f in [lifecycle, which_tool, rag_ingest, chunking, retrieval, agent_loop, multi_agent, mcp,
                                  rag_query, vs_index, vs_config, model_lifecycle, endpoint_auth, uc_assets, guardrails,
-                                 gateway, eval_monitor]}
+                                 gateway, eval_monitor, today_stack]}
 
 
 def render(did):
