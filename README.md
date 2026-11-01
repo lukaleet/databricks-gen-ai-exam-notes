@@ -10,7 +10,7 @@ An interactive study guide for the **Databricks Certified Generative AI Engineer
 | 📅 28-day plan as a checklist (dates can be aligned to your exam date, with a "Today" view on the dashboard) | [`plan/daily-plan.yaml`](plan/daily-plan.yaml) and the site's *Daily plan* |
 | 📚 Study notes for every exam objective (6 sections + exam overview + study plan) | [`notes/`](notes/) and the site |
 | 🗺️ Visual guide: 17 architecture diagrams (RAG pipeline, agents, Vector Search, deployment, auth, guardrails, gateway, eval/monitoring loop) | [`notes/08-visual-guide.md`](notes/08-visual-guide.md), site → *Visual guide* |
-| ✍️ 165 exam-style questions (single & multiple-selection) with explanations | [`questions/`](questions/) and the site's *Practice* page |
+| ✍️ 183 exam-style questions (single & multiple-selection) with explanations | [`questions/`](questions/) and the site's *Practice* page |
 | ⏱️ Timed mock exams: 45 questions, 90 minutes, weighted by section | Site → *Mock exam* |
 | 🧩 Multi-step design scenarios | [`scenarios/`](scenarios/) and the site |
 | 🃏 Flashcards + glossary (112 terms) with **old → current product names** | Site → *Flashcards*, *Glossary* |

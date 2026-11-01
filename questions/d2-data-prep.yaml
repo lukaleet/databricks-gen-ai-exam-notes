@@ -4,189 +4,189 @@ questions:
     objective: Apply a chunking strategy for a given document structure and model constraints
     q: An engineer must load 180 million chunk embeddings into a vector store limited to 120 million records. Which TWO changes reduce the record count?
     options:
-      - Increase chunk size
-      - Decrease chunk overlap
       - Decrease chunk size
+      - Decrease chunk overlap
       - Increase chunk overlap
+      - Increase chunk size
       - Use an embedding model with fewer dimensions
-    answer: [A, B]
+    answer: [B, D]
     explain: Chunk count ≈ tokens / (chunk_size − overlap). Bigger chunks and less overlap both mean fewer chunks. Fewer embedding dimensions makes each vector smaller but doesn't reduce the number of records.
 
   - id: d2-02
     objective: Apply a chunking strategy for a given document structure and model constraints
     q: Technical manuals are well structured with H1/H2/H3 headings, and each section describes one procedure. Users ask "how do I do X" questions. Which chunking strategy is best?
     options:
-      - Fixed 100-character chunks with no overlap
-      - Structure-aware chunking by section headings, keeping the heading as metadata or prefix
-      - One chunk per entire manual
-      - Random sentence sampling
-    answer: [B]
-    explain: Structure-aware (header-based) chunking keeps each procedure together and adds useful context from the heading.
+      - Fixed 512-token chunks with 10% overlap, ignoring the heading structure
+      - One chunk per manual page, with the page number stored as metadata
+      - Sentence-level chunks, so that each retrieved unit is short and precise
+      - Chunk by section headings, keeping the heading as metadata
+    answer: [D]
+    explain: Structure-aware (header-based) chunking keeps each procedure together and adds useful context from the heading. Fixed-size, sentence or page chunks cut procedures apart.
 
   - id: d2-03
     objective: Apply a chunking strategy for a given document structure and model constraints
     q: The chosen embedding model has a 512-token maximum input. Chunks are currently 1,500 tokens. What happens and what should be done?
     options:
-      - Nothing; the model automatically summarizes long inputs
-      - Text beyond 512 tokens is truncated and lost from the embedding; reduce chunk size to ≤512 tokens or use a longer-context embedding model
-      - The index creation fails with a clear error in all cases
-      - Embedding dimension increases automatically
-    answer: [B]
-    explain: Most embedding models silently truncate input beyond their context window. Make chunks fit the model, or switch to a longer-context model.
+      - The model embeds the first and last 256 tokens, so the middle is lost; add more overlap
+      - The model averages each 512-token window, so retrieval is only slower; no change needed
+      - Index creation fails with a token-limit error; split the source documents and retry
+      - Text past 512 tokens is truncated; use ≤512-token chunks or a longer-context model
+    answer: [D]
+    explain: Most embedding models silently truncate input beyond their context window, so the tail of each chunk is never represented. Make chunks fit the model, or switch to a longer-context model.
 
   - id: d2-04
     objective: Apply a chunking strategy for a given document structure and model constraints
-    q: What is the main purpose of chunk overlap?
+    q: Retrieval often returns a chunk that ends mid-explanation, while the next chunk, which holds the conclusion, isn't retrieved. Which chunking change addresses this most directly?
     options:
-      - To reduce storage cost
-      - To keep context that spans chunk boundaries so information isn't split in a way that loses meaning
-      - To increase embedding dimension
-      - To enable hybrid search
-    answer: [B]
-    explain: Overlap repeats some tokens between adjacent chunks so sentences or ideas cut at a boundary still appear whole in at least one chunk. The cost is more chunks.
+      - Raise num_results so that more chunks are retrieved
+      - Switch to a higher-dimensional embedding model
+      - Add overlap between adjacent chunks
+      - Reduce the chunk size so each chunk is more precise
+    answer: [C]
+    explain: Overlap repeats some tokens between adjacent chunks, so an idea cut at a boundary still appears whole in at least one chunk. The cost is more chunks. Smaller chunks make the split worse.
 
   - id: d2-05
     objective: Filter extraneous content in source documents that degrades quality of a RAG application
     q: Retrieved chunks often contain only page headers, footers with legal disclaimers, and page numbers. What should the engineer do?
     options:
-      - Increase num_results so more chunks are returned
-      - Strip repeated headers, footers and boilerplate during parsing before chunking
-      - Switch to a larger LLM
-      - Increase chunk overlap
-    answer: [B]
-    explain: Boilerplate pollutes chunks and embeddings. Remove it in the parse or clean step before chunking.
+      - Increase chunk size so boilerplate is a smaller share of each chunk
+      - Add a reranker so that boilerplate chunks fall below the useful ones
+      - Raise num_results so useful chunks still reach the LLM alongside these
+      - Strip headers, footers and boilerplate while parsing, before chunking
+    answer: [D]
+    explain: Boilerplate pollutes chunks and embeddings. Remove it in the parse or clean step before chunking. Retrieving more, reranking or bigger chunks only work around it.
 
   - id: d2-06
     objective: Filter extraneous content in source documents that degrades quality of a RAG application
     q: A knowledge base contains five versions of the same policy, and the bot sometimes quotes outdated rules. Which TWO actions help most?
     options:
-      - De-duplicate and keep only the current version in the index
-      - Add version/effective-date metadata and filter to current documents at query time
-      - Increase temperature
-      - Use a bigger chunk overlap
-      - Add more versions so the model sees all of them
-    answer: [A, B]
+      - Add a reranker so that the newer policy versions tend to rank higher
+      - Add effective-date metadata and filter to current versions
+      - Deduplicate and keep only the current version in the index
+      - Raise num_results so all versions can be compared
+      - Tell the model to prefer the most recent policy it sees
+    answer: [B, C]
     explain: Remove outdated duplicates, or tag them with metadata and filter at retrieval time, so only current content reaches the LLM.
 
   - id: d2-07
     objective: Choose the appropriate Python package to extract document content from provided source data and format
     q: Source documents are scanned contracts saved as PNG images. Which Python package extracts the text with the least code?
     options:
-      - beautifulsoup4
       - pytesseract
-      - scrapy
-      - python-pptx
-    answer: [B]
-    explain: Scanned images need OCR. pytesseract wraps Tesseract OCR in one function call. BeautifulSoup parses HTML, scrapy crawls websites.
+      - beautifulsoup4
+      - pypdf
+      - pdfplumber
+    answer: [A]
+    explain: Scanned images need OCR. pytesseract wraps Tesseract OCR in one function call. pypdf and pdfplumber read a PDF's text layer, which images don't have, and BeautifulSoup parses HTML.
 
   - id: d2-08
     objective: Choose the appropriate Python package to extract document content from provided source data and format
     q: An engineer needs to extract text and tables from digitally generated (not scanned) PDF reports. Which package is the most appropriate?
     options:
       - pdfplumber (or pypdf)
-      - pytesseract only
-      - requests
-      - lxml
+      - pytesseract with pdf2image
+      - python-docx
+      - beautifulsoup4
     answer: [A]
-    explain: Digital PDFs have a text layer. pypdf, pdfplumber or PyMuPDF extract it directly, and pdfplumber handles tables well. OCR isn't needed.
+    explain: Digital PDFs have a text layer. pypdf, pdfplumber or PyMuPDF extract it directly, and pdfplumber handles tables well. OCR isn't needed, and the other packages handle HTML or Word files.
 
   - id: d2-09
     objective: Choose the appropriate Python package to extract document content from provided source data and format
     q: A corpus mixes PDF, DOCX, PPTX, HTML and email files. The team wants one library that partitions all of them into elements like Title, NarrativeText and Table. Which should they choose?
     options:
-      - unstructured
+      - pypdf
+      - beautifulsoup4
       - python-docx
-      - tiktoken
-      - matplotlib
-    answer: [A]
-    explain: The unstructured library handles many formats and splits them into typed elements, which helps structure-aware chunking.
+      - unstructured
+    answer: [D]
+    explain: The unstructured library handles many formats and splits them into typed elements, which helps structure-aware chunking. The others each handle a single format.
 
   - id: d2-10
     objective: Choose the appropriate Python package to extract document content from provided source data and format
     q: The team wants to parse PDFs, DOCX and scanned images stored in a Unity Catalog volume directly in SQL, at scale, keeping layout elements such as tables and titles. Which Databricks feature fits?
     options:
-      - ai_parse_document() with read_files(..., format => 'binaryFile')
-      - ai_translate()
-      - vector_search()
-      - The Genie Conversation API
-    answer: [A]
-    explain: ai_parse_document (GA in 2026) parses PDFs, Office docs and images into structured elements (text, tables, figures) directly in SQL.
+      - ai_extract() over the raw file paths listed in the volume
+      - ai_parse_document() over read_files(..., format => 'binaryFile')
+      - read_files(..., format => 'text') followed by ai_summarize()
+      - vector_search() pointed directly at the volume path
+    answer: [B]
+    explain: ai_parse_document (GA in 2026) parses PDFs, Office docs and images into structured elements (text, tables, figures) directly in SQL. ai_extract works on text you already have, and the text reader can't read binary documents.
 
   - id: d2-11
     objective: Define operations and sequence to write given chunked text into Delta Lake tables in Unity Catalog
-    q: Which sequence correctly prepares chunked documents for a Delta Sync Vector Search index?
+    q: Which sequence correctly prepares documents from a Unity Catalog volume for a Delta Sync Vector Search index with managed embeddings?
     options:
-      - Create index → chunk → parse → write table
-      - Ingest files from a UC volume → parse text → chunk → add primary key and metadata → write Delta table in UC → enable Change Data Feed → create/sync index
-      - Write raw PDFs directly into the index
-      - Chunk → embed manually → store embeddings in a CSV → upload to the endpoint
-    answer: [B]
-    explain: Ingest, parse, chunk, add a key, write to a UC Delta table with CDF enabled, then create the Delta Sync index (which computes embeddings with managed embeddings).
+      - Ingest → parse → chunk → add key → write UC Delta table (CDF on) → create/sync index
+      - Ingest → chunk → parse → write UC Delta table → create index → enable CDF on the table
+      - Ingest → parse → embed → chunk → add key → write UC Delta table → create/sync index
+      - Ingest → parse → chunk → create index → write the chunks directly into the index
+    answer: [A]
+    explain: Ingest, parse, chunk, add a key, write to a UC Delta table with CDF enabled, then create the Delta Sync index, which computes the embeddings itself. You can't write into a Delta Sync index directly.
 
   - id: d2-12
     objective: Define operations and sequence to write given chunked text into Delta Lake tables in Unity Catalog
     q: Creating a Delta Sync index fails because the source table doesn't meet requirements. Which table property is required?
     options:
-      - delta.enableChangeDataFeed = true
-      - delta.autoOptimize.optimizeWrite = false
-      - delta.columnMapping.mode = 'none'
+      - delta.autoOptimize.optimizeWrite = true
       - delta.appendOnly = true
-    answer: [A]
+      - delta.enableChangeDataFeed = true
+      - delta.enableDeletionVectors = true
+    answer: [C]
     explain: Delta Sync indexes read incremental changes through Change Data Feed, so it must be enabled on the source table.
 
   - id: d2-13
     objective: Define operations and sequence to write given chunked text into Delta Lake tables in Unity Catalog
     q: Documents are updated daily. Only changed documents' chunks should be updated in the index, with minimal reprocessing. What is the best write pattern?
     options:
-      - Overwrite the full chunks table every day
-      - MERGE (upsert/delete) changed chunks into the Delta table by primary key, then trigger an index sync
-      - Create a new index every day
-      - Append duplicates and rely on the LLM to choose
-    answer: [B]
-    explain: MERGE keyed on the chunk/document id changes only what changed. CDF then propagates just those changes during the sync.
+      - Upsert changed chunks straight into the Delta Sync index with index.upsert()
+      - Append new chunk versions with a timestamp and filter to the latest at query time
+      - Overwrite the chunks table nightly; CDF ensures only changed rows are re-embedded
+      - MERGE changed chunks by primary key into the Delta table, then trigger an index sync
+    answer: [D]
+    explain: MERGE keyed on the chunk or document id changes only what changed, and CDF then propagates just those changes during the sync. Overwriting rewrites every row, and upsert works only on Direct Vector Access indexes.
 
   - id: d2-14
     objective: Define operations and sequence to write given chunked text into Delta Lake tables in Unity Catalog
-    q: Which column name must NOT be used in a source table for a Databricks Vector Search (AI Search) index because it is reserved?
+    q: Creating a Vector Search index from a chunks table fails. The table has the columns _id, chunk_id, text and source. What should the engineer change?
     options:
-      - id
-      - _id
-      - chunk
-      - text
-    answer: [B]
-    explain: The column name _id is reserved. Rename it before creating the index.
+      - Convert text to an ARRAY<FLOAT> column first
+      - Rename chunk_id to id, the required key name
+      - Drop the source column; metadata isn't allowed
+      - Rename the _id column, which is reserved
+    answer: [D]
+    explain: The column name _id is reserved. Rename it before creating the index. Any unique key column name works, embeddings can be computed for you, and metadata columns are allowed.
 
   - id: d2-15
     objective: Identify needed source documents that provide necessary knowledge and quality for a given RAG application
     q: An internal IT helpdesk bot answers VPN questions well but fails on laptop-procurement questions. Retrieval logs show no relevant chunks for procurement queries. What is the most likely fix?
     options:
-      - Increase the LLM temperature
-      - Add the procurement policy documents to the knowledge source
-      - Switch to a larger LLM
-      - Lower num_results
-    answer: [B]
-    explain: If retrieval finds nothing relevant, the knowledge isn't in the corpus. Add the missing authoritative source.
+      - Switch to hybrid search so procurement keywords match
+      - Raise num_results so procurement chunks are retrieved
+      - Add a reranker so that procurement chunks rank higher
+      - Add the procurement policies to the corpus
+    answer: [D]
+    explain: If retrieval finds nothing relevant, the knowledge isn't in the corpus. Reranking, retrieving more or hybrid search can't find documents that aren't there.
 
   - id: d2-16
     objective: Identify needed source documents that provide necessary knowledge and quality for a given RAG application
-    q: Which source is the BEST candidate for a RAG app answering employee benefits questions?
+    q: A team is choosing sources for a RAG app that answers US employees' benefits questions. Which source should form the core of the knowledge base?
     options:
-      - Current, official benefits policy documents owned by HR
-      - Anonymous forum posts discussing benefits
-      - A 2015 archived benefits brochure
-      - Random web pages about benefits in other countries
+      - The current benefits policies published and owned by HR
+      - The benefits vendor's public FAQ covering all countries
+      - All benefits brochures since 2015, for the full history
+      - Answered benefits threads from the internal Q&A forum
     answer: [A]
-    explain: Use authoritative, current, owned sources. Outdated or unofficial content causes wrong answers.
+    explain: Use authoritative, current, owned sources. Forum threads, old brochures and other countries' FAQs cause wrong or outdated answers.
 
   - id: d2-17
     objective: Use tools and metrics to evaluate retrieval performance
     q: Of the top 5 retrieved chunks, 2 are relevant. Of the 4 relevant chunks that exist in total, 2 were retrieved. What are precision@5 and recall@5?
     options:
-      - Precision 0.4, Recall 0.5
       - Precision 0.5, Recall 0.4
-      - Precision 0.2, Recall 0.25
-      - Precision 0.8, Recall 1.0
-    answer: [A]
+      - Precision 0.4, Recall 0.4
+      - Precision 0.4, Recall 0.5
+      - Precision 0.5, Recall 0.5
+    answer: [C]
     explain: Precision@5 = relevant retrieved / retrieved = 2/5 = 0.4. Recall@5 = relevant retrieved / all relevant = 2/4 = 0.5.
 
   - id: d2-18
@@ -194,31 +194,31 @@ questions:
     q: Which metric rewards a retriever for placing the FIRST relevant result as high as possible in the ranking?
     options:
       - Mean Reciprocal Rank (MRR)
-      - BLEU
-      - Perplexity
-      - Recall@100
+      - Precision@10
+      - Normalized hit rate over the top 10 results
+      - Recall@10
     answer: [A]
-    explain: MRR averages 1/rank of the first relevant result, so higher placement means a higher score.
+    explain: MRR averages 1/rank of the first relevant result, so placing it higher gives a higher score. Recall, precision and hit rate at k ignore the position within the top k.
 
   - id: d2-19
     objective: Use tools and metrics to evaluate retrieval performance
     q: Which MLflow built-in judge checks whether the retrieved context contains all the information needed to produce the expected answer, and therefore requires ground truth?
     options:
-      - RetrievalRelevance
-      - RetrievalSufficiency
+      - Correctness
       - RetrievalGroundedness
-      - Safety
-    answer: [B]
-    explain: RetrievalSufficiency compares the retrieved context with the expected facts or response, so it needs expectations. RetrievalRelevance and RetrievalGroundedness don't.
+      - RetrievalSufficiency
+      - RetrievalRelevance
+    answer: [C]
+    explain: RetrievalSufficiency compares the retrieved context with the expected facts or response, so it needs expectations. RetrievalRelevance and RetrievalGroundedness don't. Correctness needs ground truth but checks the response, not the context.
 
   - id: d2-20
     objective: Use tools and metrics to evaluate retrieval performance
     q: MLflow retrieval judges cannot find the retrieved documents for a custom Python RAG app. What is the most likely cause?
     options:
-      - The retriever function is not traced as a RETRIEVER span
-      - The LLM temperature is too low
-      - The model is not registered in Unity Catalog
-      - The index uses triggered sync
+      - The retriever isn't traced as a RETRIEVER span
+      - The judges need the index to use managed embeddings
+      - The agent wasn't logged as an MLflow model before evaluation
+      - The evaluation dataset has no expected_facts column
     answer: [A]
     explain: Retrieval judges read the retrieved context from trace spans of type RETRIEVER. Use @mlflow.trace(span_type=SpanType.RETRIEVER) or autologging.
 
@@ -226,43 +226,87 @@ questions:
     objective: Design retrieval systems using advanced chunking strategies
     q: Users ask precise questions, but answers need the surrounding section for context. Small chunks retrieve precisely but lack context; large chunks retrieve poorly. Which design addresses both?
     options:
-      - Parent-child (small-to-big) retrieval - embed small chunks, return their larger parent section to the LLM
-      - Increase overlap to 90%
-      - Use one chunk per document
-      - Remove metadata
-    answer: [A]
-    explain: Parent-child retrieval matches on small, precise chunks and then gives the LLM the richer parent context.
+      - Large chunks plus a reranker to find the precise passage
+      - Parent-child (small-to-big) retrieval
+      - Small chunks, with num_results raised to 20
+      - Small chunks with 50% overlap between neighbours
+    answer: [B]
+    explain: Parent-child retrieval matches on small, precise chunks and then gives the LLM the richer parent section. The other options trade precision for context or the other way round.
 
   - id: d2-22
     objective: Design retrieval systems using advanced chunking strategies
     q: Queries often contain exact product codes like "XR-4471B" that semantic search misses. What should be enabled?
     options:
-      - Hybrid search (vector + keyword/BM25)
-      - A larger chunk overlap
-      - Higher LLM temperature
-      - Continuous sync
-    answer: [A]
-    explain: Keyword (BM25) matching catches exact tokens like codes and IDs. Hybrid search fuses it with semantic similarity.
+      - A reranker over the top 50 results
+      - LLM query rewriting before retrieval
+      - A larger, higher-dimensional embedding model
+      - Hybrid search (vector + keyword)
+    answer: [D]
+    explain: Keyword (BM25) matching catches exact tokens like codes and IDs, and hybrid search fuses it with semantic similarity. A reranker can't promote a chunk that the first stage never returned.
 
   - id: d2-23
     objective: Explain the role of re-ranking in the information retrieval process
-    q: What does a re-ranker do in a RAG pipeline?
+    q: First-stage ANN retrieval returns the right chunk somewhere in the top 50, but it rarely makes the top 5 that are sent to the LLM. What should the engineer add?
     options:
-      - Re-computes all document embeddings at query time
-      - Re-scores a candidate set from first-stage retrieval with a more accurate (usually cross-encoder) model and reorders it so the most relevant chunks go to the LLM
-      - Randomizes results to increase diversity
-      - Compresses the vector index
-    answer: [B]
-    explain: Two-stage retrieval works like this. Fast ANN search gives high-recall candidates, then a re-ranker reads query and document together to improve precision at the top.
+      - Smaller chunks, so each one is more focused
+      - num_results=50, sending all 50 chunks to the LLM
+      - A reranker over the top 50 candidates
+      - A larger embedding model, re-indexing every chunk
+    answer: [C]
+    explain: 'This is a ranking problem: recall is fine, precision at the top is not. A reranker reads the query and each candidate together and reorders them. Sending all 50 chunks adds cost and noise.'
 
   - id: d2-24
     objective: Explain the role of re-ranking in the information retrieval process
     q: Which TWO statements about adding a re-ranker are true?
     options:
-      - Higher relevance of top results
-      - Increased query latency and compute cost
-      - Guaranteed elimination of hallucinations
-      - Reduced number of vectors stored
-      - Removes the need for an embedding model
-    answer: [A, B]
+      - It adds query latency and compute cost
+      - It replaces first-stage vector search
+      - It reduces the number of vectors stored
+      - It improves the relevance of the top results
+      - It eliminates hallucinations in the answer
+    answer: [A, D]
     explain: Re-ranking improves top-k relevance but adds latency and compute. It doesn't change storage and doesn't guarantee there are no hallucinations.
+
+  - id: d2-25
+    objective: Filter extraneous content in source documents that degrades quality of a RAG application
+    q: A crawler ingests the company's HTML help center. Retrieved chunks are full of navigation menus, cookie banners and "related articles" lists. What should the engineer do?
+    options:
+      - Extract only the main article body (by HTML element) before chunking
+      - Lower the chunk size so that menus land in chunks of their own
+      - Add a system prompt telling the model to ignore navigation text
+      - Raise num_results so article chunks also make it into the context
+    answer: [A]
+    explain: Page chrome is extraneous content. Remove it at parse time (e.g. keep the article element with BeautifulSoup) so it never reaches the chunks or embeddings. The other options leave the noise in the index.
+
+  - id: d2-26
+    objective: Identify needed source documents that provide necessary knowledge and quality for a given RAG application
+    q: An assistant for sales engineers must answer questions like "Does product X support SSO with Okta?" accurately for the current release. Which source set is best?
+    options:
+      - Every thread from the sales-engineering Slack channel over the last three years
+      - Current product docs and release notes, plus the official integration matrix
+      - Marketing brochures for every past release of the product
+      - Competitor comparison pages collected from the public web
+    answer: [B]
+    explain: The answer must be authoritative and current, so use the owned, versioned product documentation. Chat threads and old brochures contain outdated or informal claims, and competitor pages aren't authoritative.
+
+  - id: d2-27
+    objective: Design retrieval systems using advanced chunking strategies
+    q: Financial reports contain large tables. Rows split across chunks lose their column headers, and answers about table values are often wrong. Which chunking approach helps most?
+    options:
+      - Split on sentences so that each number ends up in its own chunk
+      - Use fixed 256-token chunks with 20% overlap across the whole report
+      - Chunk tables as units (or row groups) and repeat the header row in each
+      - Drop the tables and index only the narrative text of the reports
+    answer: [C]
+    explain: Table-aware chunking keeps rows with their headers, so each chunk is self-describing. Fixed or sentence splits cut tables apart, and dropping tables loses the facts users ask about.
+
+  - id: d2-28
+    objective: Explain the role of re-ranking in the information retrieval process
+    q: After adding a reranker over the top 50 candidates, answer quality improves, but p95 latency rises from 400 ms to 1.4 s, above the 1 s budget. What is the best adjustment?
+    options:
+      - Remove the reranker and send the top 50 chunks straight to the LLM instead
+      - Rerank every document in the index so that no relevant chunk is missed
+      - Move the index to a storage-optimized endpoint to cut the query latency
+      - Rerank fewer candidates (e.g. the top 20) and re-measure quality and latency
+    answer: [D]
+    explain: Reranking cost grows with the number of candidates. Reranking fewer keeps most of the quality gain within the budget. Storage-optimized endpoints trade latency for cost, so they would make it slower.

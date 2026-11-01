@@ -421,14 +421,30 @@
     app.innerHTML = `<h1>Mock exam</h1>
       <p class="sub">Matches the real exam's format: <b>45 scored questions in ${MOCK_MINUTES} minutes</b>, spread across sections by the official weights. You get no feedback until you submit. You can flag questions and jump around.</p>
       <div class="card"><table style="width:100%;border-collapse:collapse">${SECTION_IDS.map((sid) => `<tr><td style="padding:4px 0">${esc(secName(sid))}</td><td style="text-align:right">${E.sections[sid].weight}%</td><td style="text-align:right;padding-left:16px"><b>${E.sections[sid].mock}</b> q</td></tr>`).join("")}</table></div>
-      <div class="callout">Databricks doesn't print a passing score in this exam guide. As a practical target, aim for <b>80%+</b> on mocks before you book. Questions are randomly drawn from the bank, so retakes differ.</div>
+      <div class="callout">Databricks doesn't print a passing score in this exam guide. As a practical target, aim for <b>80%+</b> on mocks before you book. Questions are spread across each section's objectives, and the ones you've seen least in earlier mocks are drawn first, so retakes cover new ground.</div>
       ${S.mockActive ? `<div class="callout warn">You have a mock in progress. <a href="#/mock/run">Resume it</a> or start a new one.</div>` : ""}
       <div class="row"><button class="btn primary" id="start">Start new mock exam</button>${S.mocks.length ? `<a class="btn" href="#/mock/result">Last result</a>` : ""}</div>`;
     document.getElementById("start").onclick = () => {
-      const ids = SECTION_IDS.flatMap((sid) => shuffle(E.questions.filter((q) => q.section === sid)).slice(0, E.sections[sid].mock).map((q) => q.id));
+      const ids = SECTION_IDS.flatMap((sid) => pickMockSection(sid, E.sections[sid].mock));
       S.mockActive = { items: shuffle(ids).map((id) => makeItem(byId[id])), answers: {}, flags: {}, idx: 0, start: Date.now() };
       save(); location.hash = "#/mock/run";
     };
+  }
+  // Spread a section's quota across its objectives (round-robin), preferring questions
+  // that appeared in the fewest earlier mocks, so retakes cover new ground.
+  function pickMockSection(sid, n) {
+    const seen = {};
+    S.mocks.forEach((m) => (m.detail || []).forEach((d) => (seen[d.id] = (seen[d.id] || 0) + 1)));
+    const groups = {};
+    shuffle(E.questions.filter((q) => q.section === sid))
+      .sort((a, b) => (seen[a.id] || 0) - (seen[b.id] || 0))
+      .forEach((q) => (groups[q.objective] = groups[q.objective] || []).push(q));
+    const objs = shuffle(Object.keys(groups)).sort((a, b) => (seen[groups[a][0].id] || 0) - (seen[groups[b][0].id] || 0));
+    const out = [];
+    while (out.length < n && objs.some((o) => groups[o].length)) {
+      for (const o of objs) if (out.length < n && groups[o].length) out.push(groups[o].shift().id);
+    }
+    return out;
   }
   function runMock() {
     const m = S.mockActive;
@@ -487,12 +503,20 @@
     if (S.mocks.length > 30) S.mocks = S.mocks.slice(-30);
     save(); location.hash = "#/mock/result";
   }
+  function weakObjectives(r) {
+    const by = {};
+    (r.detail || []).forEach((d) => { const q = byId[d.id]; if (!q) return; const k = q.section + "|" + q.objective; (by[k] = by[k] || [0, 0])[1]++; if (d.ok) by[k][0]++; });
+    const missed = Object.entries(by).filter(([, [c, t]]) => c < t).sort((a, b) => a[1][0] / a[1][1] - b[1][0] / b[1][1]);
+    if (!missed.length) return "";
+    return `<h2>Objectives you missed</h2><div class="card">${missed.map(([k, [c, t]]) => { const [sid, obj] = k.split("|"); return `<div class="row" style="padding:3px 0"><span class="tag">§${sid.slice(1)}</span><span>${esc(obj)}</span><span class="spacer"></span><b>${c}/${t}</b></div>`; }).join("")}</div>`;
+  }
   function mockResult(r) {
     const p = pct(r.score, r.total);
     app.innerHTML = `<h1>Mock exam result</h1>
       <div class="grid"><div class="card"><div class="label">Score</div><div class="stat" style="color:${p >= 80 ? "var(--ok)" : p >= 70 ? "var(--warn)" : "var(--bad)"}">${p}%</div><div class="label">${r.score} / ${r.total} · ${Math.round(r.secs / 60)} min</div></div>
       <div class="card"><div class="label">Readiness</div><div style="font-weight:600;margin-top:6px">${p >= 80 ? "On track. Keep it consistent across a few mocks." : p >= 70 ? "Borderline. Work on your weakest sections below." : "Not yet. Go back to the notes and labs for weak sections."}</div></div></div>
       <h2>By section</h2><div class="card">${SECTION_IDS.map((sid) => { const [c, t] = r.bySection[sid] || [0, 0]; return `<div style="margin:8px 0"><div class="row"><span>${esc(secName(sid))}</span><span class="spacer"></span><b>${c}/${t}</b></div><div class="bar"><span style="width:${pct(c, t)}%;background:${pct(c, t) >= 80 ? "var(--ok)" : pct(c, t) >= 60 ? "var(--warn)" : "var(--bad)"}"></span></div></div>`; }).join("")}</div>
+      ${weakObjectives(r)}
       <div class="row" style="margin:12px 0"><label><input type="checkbox" id="wrong-only" checked> Show only incorrect</label><span class="spacer"></span><a class="btn" href="#/review">Review mistakes</a><a class="btn primary" href="#/mock">New mock</a></div>
       <div id="details"></div>`;
     const drawDetails = () => {
