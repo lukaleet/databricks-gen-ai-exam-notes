@@ -89,6 +89,27 @@ def build_scenarios():
     return data["scenarios"]
 
 
+def build_exams(bank_ids):
+    """Fixed final exams (exams/*.yaml): own question ids, never drawn by random mocks or practice."""
+    exams, seen = [], set(bank_ids)
+    for path in sorted(glob.glob(os.path.join(ROOT, "exams", "*.yaml"))):
+        data = yaml.safe_load(open(path, encoding="utf-8"))
+        qs = []
+        for q in data["questions"]:
+            if q["id"] in seen:
+                errors.append(f"duplicate id {q['id']}")
+            seen.add(q["id"])
+            if q.get("section") not in SECTIONS:
+                errors.append(f"{os.path.basename(path)}:{q['id']} bad section")
+            qs.append(check_question(q, os.path.basename(path)))
+        for sid, sec in SECTIONS.items():
+            n = sum(q["section"] == sid for q in qs)
+            if n != sec["mock"]:
+                errors.append(f"{os.path.basename(path)}: section {sid} has {n} questions, expected {sec['mock']}")
+        exams.append({"id": data["id"], "title": data["title"], "questions": qs})
+    return exams
+
+
 def build_glossary():
     return yaml.safe_load(open(os.path.join(ROOT, "questions", "glossary.yaml"), encoding="utf-8"))["terms"]
 
@@ -141,6 +162,7 @@ def main():
         "labs": build_labs(),
         "repo": REPO_URL,
     }
+    content["exams"] = build_exams(q["id"] for q in content["questions"])
     content["plan"] = build_plan(content["labs"], content["scenarios"])
     for sid, s in SECTIONS.items():
         n = sum(q["section"] == sid for q in content["questions"])
@@ -154,7 +176,7 @@ def main():
     with open(out, "w", encoding="utf-8") as f:
         f.write("window.EXAM = " + json.dumps(content, ensure_ascii=False) + ";\n")
     print(f"OK: {len(content['notes'])} notes, {len(content['questions'])} questions, "
-          f"{len(content['scenarios'])} scenarios, {len(content['glossary'])} terms, "
+          f"{sum(len(x['questions']) for x in content['exams'])} final-exam questions, {len(content['scenarios'])} scenarios, {len(content['glossary'])} terms, "
           f"{len(content['labs'])} labs, {sum(len(w['days']) for w in content['plan'])}-day plan "
           f"-> {os.path.relpath(out, ROOT)}")
 

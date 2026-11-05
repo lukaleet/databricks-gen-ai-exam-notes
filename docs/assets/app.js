@@ -11,7 +11,9 @@
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const pct = (n, d) => (d ? Math.round((100 * n) / d) : 0);
-  const byId = Object.fromEntries(E.questions.map((q) => [q.id, q]));
+  const EXAMS = E.exams || [];
+  const ALLQ = E.questions.concat(...EXAMS.map((x) => x.questions));   // bank + fixed final exams
+  const byId = Object.fromEntries(ALLQ.map((q) => [q.id, q]));
   const secName = (sid) => (E.sections[sid] ? `§${sid.slice(1)} ${E.sections[sid].name}` : sid);
   const h = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; };
 
@@ -271,7 +273,7 @@
             <div class="row" style="margin-top:6px"><div class="bar" style="flex:1"><span style="width:${s.mastery}%"></span></div><span class="label" style="min-width:110px;text-align:right">${s.mastered}/${s.total} mastered</span></div>
           </div>`; }).join("")}
       </div>
-      ${mocks.length ? `<h2>Mock exam history</h2><div class="card">${mocks.slice(-8).reverse().map((m) => `<div class="row" style="padding:4px 0"><span>${new Date(m.date).toLocaleString()}</span><span class="spacer"></span><b>${pct(m.score, m.total)}%</b><span class="muted">(${m.score}/${m.total}, ${Math.round(m.secs / 60)} min)</span></div>`).join("")}</div>` : ""}
+      ${mocks.length ? `<h2>Mock exam history</h2><div class="card">${mocks.slice(-8).reverse().map((m) => `<div class="row" style="padding:4px 0"><span>${m.title ? `<b>${esc(m.title)}</b> · ` : ""}${new Date(m.date).toLocaleString()}</span><span class="spacer"></span><b>${pct(m.score, m.total)}%</b><span class="muted">(${m.score}/${m.total}, ${Math.round(m.secs / 60)} min)</span></div>`).join("")}</div>` : ""}
       <h2>How to use this guide</h2>
       <ol>
         <li><b>Diagnose:</b> take a 10-question practice quiz per section <i>before</i> reading.</li>
@@ -403,8 +405,8 @@
 
   /* ---------------- review mistakes ---------------- */
   function viewReview() {
-    const missed = E.questions.filter((q) => S.hist[q.id] && S.hist[q.id].last === false);
-    const shaky = E.questions.filter((q) => S.hist[q.id] && S.hist[q.id].last === true && S.hist[q.id].wrong > 0);
+    const missed = ALLQ.filter((q) => S.hist[q.id] && S.hist[q.id].last === false);
+    const shaky = ALLQ.filter((q) => S.hist[q.id] && S.hist[q.id].last === true && S.hist[q.id].wrong > 0);
     app.innerHTML = `<h1>Review mistakes</h1>
       <p class="sub">Questions whose <b>most recent</b> attempt was wrong. Answer one correctly and it leaves this list. For each miss, ask yourself <i>which constraint word you overlooked</i>.</p>
       <div class="row"><button class="btn primary" id="go" ${missed.length ? "" : "disabled"}>Practice ${missed.length} missed</button>
@@ -424,12 +426,22 @@
       <div class="card"><table style="width:100%;border-collapse:collapse">${SECTION_IDS.map((sid) => `<tr><td style="padding:4px 0">${esc(secName(sid))}</td><td style="text-align:right">${E.sections[sid].weight}%</td><td style="text-align:right;padding-left:16px"><b>${E.sections[sid].mock}</b> q</td></tr>`).join("")}</table></div>
       <div class="callout">Databricks doesn't print a passing score in this exam guide. As a practical target, aim for <b>80%+</b> on mocks before you book. Questions are spread across each section's objectives, and the ones you've seen least in earlier mocks are drawn first, so retakes cover new ground.</div>
       ${S.mockActive ? `<div class="callout warn">You have a mock in progress. <a href="#/mock/run">Resume it</a> or start a new one.</div>` : ""}
-      <div class="row"><button class="btn primary" id="start">Start new mock exam</button>${S.mocks.length ? `<a class="btn" href="#/mock/result">Last result</a>` : ""}</div>`;
+      <div class="row"><button class="btn primary" id="start">Start new mock exam</button>${S.mocks.length ? `<a class="btn" href="#/mock/result">Last result</a>` : ""}</div>
+      ${EXAMS.length ? `<h2>Final exams</h2>
+      <p class="sub">Fixed 45-question sets written in the style of the official sample questions, with new questions that random mocks and practice never draw. Between them they cover every objective. Save them for your final run, and take each one once, timed.</p>
+      <div class="grid">${EXAMS.map((x) => { const done = S.mocks.filter((m) => m.exam === x.id); const last = done[done.length - 1];
+        return `<div class="card"><b>${esc(x.title)}</b><div class="label" style="margin:6px 0">${x.questions.length} questions · ${MOCK_MINUTES} min${last ? ` · last ${pct(last.score, last.total)}%` : " · not taken yet"}</div><button class="btn${last ? "" : " primary"}" data-exam="${x.id}">${last ? "Retake" : "Start"} ${esc(x.title)}</button></div>`; }).join("")}</div>` : ""}`;
     document.getElementById("start").onclick = () => {
       const ids = SECTION_IDS.flatMap((sid) => pickMockSection(sid, E.sections[sid].mock));
       S.mockActive = { items: shuffle(ids).map((id) => makeItem(byId[id])), answers: {}, flags: {}, idx: 0, start: Date.now() };
       save(); location.hash = "#/mock/run";
     };
+    app.querySelectorAll("button[data-exam]").forEach((b) => (b.onclick = () => {
+      const x = EXAMS.find((e) => e.id === b.dataset.exam);
+      if (S.mockActive && !confirm("This replaces the mock you have in progress. Continue?")) return;
+      S.mockActive = { exam: x.id, title: x.title, items: shuffle(x.questions.map((q) => q.id)).map((id) => makeItem(byId[id])), answers: {}, flags: {}, idx: 0, start: Date.now() };
+      save(); location.hash = "#/mock/run";
+    }));
   }
   // Spread a section's quota across its objectives (round-robin), preferring questions
   // that appeared in the fewest earlier mocks, so retakes cover new ground.
@@ -453,7 +465,7 @@
     const draw = () => {
       const item = m.items[m.idx], q = byId[item.id];
       const answered = Object.keys(m.answers).filter((k) => m.answers[k].length).length;
-      app.innerHTML = `<div class="exam-head"><div class="row"><b>Mock exam</b><span class="muted">Q ${m.idx + 1} / ${m.items.length} · answered ${answered}</span><span class="spacer"></span><span class="timer" id="timer"></span><button class="btn small" id="submit">Submit</button></div></div>`;
+      app.innerHTML = `<div class="exam-head"><div class="row"><b>Mock exam</b><span class="muted">${m.title ? esc(m.title) + " · " : ""}Q ${m.idx + 1} / ${m.items.length} · answered ${answered}</span><span class="spacer"></span><span class="timer" id="timer"></span><button class="btn small" id="submit">Submit</button></div></div>`;
       const w = questionWidget({ ...q, objective: "" }, { order: item.order, selected: m.answers[item.id] || [], number: m.idx + 1, onChange: (sel) => { m.answers[item.id] = sel; save(); updateGrid(); } });
       w.el.querySelector(".tag.accent").remove();   // hide section in exam mode
       app.appendChild(w.el);
@@ -499,7 +511,7 @@
       (bySection[q.section] = bySection[q.section] || [0, 0])[1]++; if (ok) bySection[q.section][0]++;
       return { id: it.id, order: it.order, sel, ok };
     });
-    const result = { date: Date.now(), score, total: m.items.length, bySection, secs: Math.round((Date.now() - m.start) / 1000), detail };
+    const result = { date: Date.now(), score, total: m.items.length, bySection, secs: Math.round((Date.now() - m.start) / 1000), detail, exam: m.exam, title: m.title };
     S.mocks.push(result); S.mockActive = null;
     if (S.mocks.length > 30) S.mocks = S.mocks.slice(-30);
     save(); location.hash = "#/mock/result";
@@ -513,7 +525,7 @@
   }
   function mockResult(r) {
     const p = pct(r.score, r.total);
-    app.innerHTML = `<h1>Mock exam result</h1>
+    app.innerHTML = `<h1>${r.title ? esc(r.title) + " result" : "Mock exam result"}</h1>
       <div class="grid"><div class="card"><div class="label">Score</div><div class="stat" style="color:${p >= 80 ? "var(--ok)" : p >= 70 ? "var(--warn)" : "var(--bad)"}">${p}%</div><div class="label">${r.score} / ${r.total} · ${Math.round(r.secs / 60)} min</div></div>
       <div class="card"><div class="label">Readiness</div><div style="font-weight:600;margin-top:6px">${p >= 80 ? "On track. Keep it consistent across a few mocks." : p >= 70 ? "Borderline. Work on your weakest sections below." : "Not yet. Go back to the notes and labs for weak sections."}</div></div></div>
       <h2>By section</h2><div class="card">${SECTION_IDS.map((sid) => { const [c, t] = r.bySection[sid] || [0, 0]; return `<div style="margin:8px 0"><div class="row"><span>${esc(secName(sid))}</span><span class="spacer"></span><b>${c}/${t}</b></div><div class="bar"><span style="width:${pct(c, t)}%;background:${pct(c, t) >= 80 ? "var(--ok)" : pct(c, t) >= 60 ? "var(--warn)" : "var(--bad)"}"></span></div></div>`; }).join("")}</div>

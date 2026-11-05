@@ -1,0 +1,571 @@
+id: final-a
+title: Final Exam A
+questions:
+  - id: fa-01
+    section: d1
+    objective: Design a prompt that elicits a specifically formatted response
+    q: A Generative AI Engineer is building an application that extracts action items from meeting transcripts. A downstream integration creates one ticket per item and requires the fields owner, task and due_date. When a transcript doesn't mention a due date, the model omits the field and the integration fails. Which prompt change best fixes this?
+    options:
+      - Give the exact JSON schema with due_date set to null when unstated, plus an example
+      - Ask for the action items as bullet points and parse owner, task and date with a regular expression
+      - Instruct the model to infer a due date one week after the meeting whenever the transcript doesn't state one
+      - Lower the temperature to 0 so the model includes every field consistently
+    answer: [A]
+    explain: The schema plus an explicit rule (and example) for missing values makes the output complete and honest. Inventing dates corrupts the data, temperature doesn't add missing fields, and regex parsing of free text is brittle.
+
+  - id: fa-02
+    section: d1
+    objective: Select model tasks to accomplish a given business requirement
+    q: A Generative AI Engineer at a retailer wants to track, for each of 50,000 monthly product reviews, whether the customer was happy, neutral or unhappy, so that trends can be charted over time. With which Natural Language Processing task category should they evaluate potential LLMs?
+    options:
+      - Sentiment analysis
+      - Text generation
+      - Summarization
+      - Named entity recognition
+    answer: [A]
+    explain: Labeling each review as positive, neutral or negative is sentiment analysis (a classification of opinion). On Databricks, ai_analyze_sentiment or ai_classify can do this in batch.
+
+  - id: fa-03
+    section: d1
+    objective: Select chain components for a desired model input and output
+    q: A Generative AI Engineer is building an app where a user uploads one supplier contract (about 20 pages, roughly 12,000 tokens) and asks whether it contains an auto-renewal clause. The answer must be "yes" or "no" plus the clause text. The chosen LLM has a 128,000-token context window, and the team wants the simplest chain. Which components should the chain contain?
+    options:
+      - Document parser → prompt template with the full contract text → LLM → output parser
+      - A model fine-tuned on past contracts → output parser
+      - LLM → output parser, with only the contract's file name passed in the prompt
+      - Document parser → chunker → Vector Search index → retriever → LLM → output parser
+    answer: [A]
+    explain: The single document fits easily in the model's context, so retrieval adds complexity without benefit. The parser extracts the text and the output parser enforces the yes/no + clause format. A file name gives the model nothing to read.
+
+  - id: fa-04
+    section: d1
+    objective: Translate business use case goals into a description of the desired inputs and outputs for the AI pipeline
+    q: 'A hospital''s operations team says: "We want nurses to spend less time finding the right protocol." Interviews show that nurses search a 1,500-document protocol library on tablets during shifts, need the specific steps plus a link to the source protocol, and must only see the current approved version. Which description of the pipeline''s inputs and outputs fits best?'
+    options:
+      - 'Input: the protocol library. Output: a nightly summary of every protocol, emailed to all nurses'
+      - 'Input: the nurse''s question. Output: concise steps from the current approved protocol, with a link to it'
+      - 'Input: the patient record. Output: a protocol chosen automatically for the patient, without a question'
+      - 'Input: the nurse''s question. Output: a free-form answer from the LLM''s general medical knowledge'
+    answer: [B]
+    explain: The requirements name the input (a question), the grounding source (current approved protocols) and the output (steps + source link). The other options ignore the grounding requirement or answer a different need.
+
+  - id: fa-05
+    section: d1
+    objective: Define and order tools that gather knowledge or take actions for multi-stage reasoning
+    q: A Generative AI Engineer is designing an agent that handles requests such as "Move my 3 pm meeting with Dana to tomorrow at the same time." The available tools are find_events, check_availability, update_event and notify_attendees. In which order should the agent use them?
+    options:
+      - find_events → notify_attendees → check_availability → update_event
+      - find_events → check_availability → update_event → notify_attendees
+      - find_events → update_event → check_availability → notify_attendees
+      - check_availability → update_event → find_events → notify_attendees
+    answer: [B]
+    explain: Gather knowledge first (which event, is the new slot free), then take the action, then notify. Updating before checking availability, or notifying before the change is made, can leave inconsistent calendars.
+
+  - id: fa-06
+    section: d1
+    objective: Determine how and when to use Agent Bricks to solve problems
+    q: A legal team stores 40,000 supplier contracts as PDFs in a Unity Catalog volume. They need a Delta table with the supplier name, contract value and termination notice period for every contract. They want minimal code and a UI to refine the extraction schema and check quality. Which Agent Bricks option fits?
+    options:
+      - Multi-Agent Supervisor
+      - A Genie space over the volume
+      - Knowledge Assistant
+      - Information Extraction
+    answer: [D]
+    explain: Turning unstructured documents into structured fields against a schema is Information Extraction (built on ai_extract). Knowledge Assistant answers questions, Multi-Agent Supervisor coordinates agents, and Genie works on tables.
+
+  - id: fa-07
+    section: d2
+    objective: Apply a chunking strategy for a given document structure and model constraints
+    q: A Generative AI Engineer is preparing a product FAQ knowledge base. Each FAQ page contains 20–40 question-and-answer pairs of 120–200 tokens each. The embedding model accepts at most 256 tokens. Which chunking strategy fits best?
+    options:
+      - One chunk per question-and-answer pair
+      - Fixed 512-token chunks with a 50-token overlap
+      - Sentence-level chunks with no overlap
+      - One chunk per full FAQ page
+    answer: [A]
+    explain: Each Q&A pair is a natural, self-contained unit that fits the 256-token limit. 512-token chunks and whole pages would be truncated by the embedding model, and sentence chunks split answers from their questions.
+
+  - id: fa-08
+    section: d2
+    objective: Filter extraneous content in source documents that degrades quality of a RAG application
+    q: A Generative AI Engineer is building a RAG application over annual-report PDFs. Each report starts with a table of contents and ends with an index, and both repeat key terms many times. Retrieval frequently returns table-of-contents and index chunks instead of the content the user needs. What should the engineer do?
+    options:
+      - Raise num_results to 20 so that body chunks are also returned
+      - Remove the table-of-contents and index pages during parsing, before chunking
+      - Increase the chunk overlap so that content chunks rank above these pages
+      - Switch to hybrid search so that exact terms match the body text instead
+    answer: [B]
+    explain: These sections are extraneous content that match queries on keywords but carry no answers. Removing them at parse time fixes the index. Overlap, hybrid search or more results leave the noise in place.
+
+  - id: fa-09
+    section: d2
+    objective: Choose the appropriate Python package to extract document content from provided source data and format
+    q: A Generative AI Engineer receives a support knowledge base as thousands of downloaded .html article files. They need the article text with the least amount of code. Which Python package should they use?
+    options:
+      - pytesseract
+      - python-docx
+      - beautifulsoup4
+      - pypdf
+    answer: [C]
+    explain: HTML files are parsed with an HTML parser such as BeautifulSoup. pytesseract is OCR for images, pypdf reads PDFs and python-docx reads Word files.
+
+  - id: fa-10
+    section: d2
+    objective: Define operations and sequence to write given chunked text into Delta Lake tables in Unity Catalog
+    q: A Generative AI Engineer has a Spark DataFrame of chunks (chunk_id, doc_id, text) and needs it to feed a Delta Sync Vector Search index. Which sequence is correct?
+    options:
+      - Write a UC Delta table with a unique chunk_id, enable CDF, then create the index
+      - Write it as a Delta table, create the index, then enable Change Data Feed on the table
+      - Write it as Parquet files in a Unity Catalog volume, then create the index on the volume path
+      - Register it as a temporary view, then create the index on the view so it updates automatically
+    answer: [A]
+    explain: A Delta Sync index needs a Unity Catalog Delta table with a primary key and Change Data Feed enabled before the index is created. Files in a volume and temporary views can't be index sources.
+
+  - id: fa-11
+    section: d2
+    objective: Use tools and metrics to evaluate retrieval performance
+    q: A Generative AI Engineer has an evaluation set of 300 questions, each labeled with the document that should be retrieved. They want to measure (1) how often the right document appears in the top 5 results and (2) how high it is ranked. Which TWO metrics should they use?
+    options:
+      - BLEU against reference answers
+      - ROUGE-L against the expected answers
+      - Mean Reciprocal Rank (MRR)
+      - Recall@5 (hit rate at 5)
+      - Perplexity
+    answer: [C, D]
+    explain: Recall@5 measures whether the relevant document is in the top 5, and MRR rewards placing it higher. BLEU and ROUGE compare generated text with references, and perplexity measures a language model's fit.
+
+  - id: fa-12
+    section: d2
+    objective: Explain the role of re-ranking in the information retrieval process
+    q: A Generative AI Engineer's RAG pipeline retrieves the top 100 candidates from Vector Search and sends the top 5 to the LLM. Answers are often incomplete, even though the right chunk is usually among the 100 candidates. Where does a re-ranker fit, and what does it improve?
+    options:
+      - 'Before retrieval: it rewrites the query so that the ANN search finds better candidates'
+      - 'After retrieval: it rescores the 100 candidates against the query and keeps the best 5'
+      - 'At indexing time: it reorders the HNSW graph so that relevant chunks sit closer together'
+      - 'After generation: it ranks several LLM answers and returns the best one to the user'
+    answer: [B]
+    explain: A re-ranker is a second-stage model that scores each candidate together with the query and reorders them, so the most relevant chunks reach the LLM. It doesn't change the query, the index or the generated answers.
+
+  - id: fa-13
+    section: d3
+    objective: Select Langchain/similar tools for use in a Generative AI application
+    q: A Generative AI Engineer needs to split documents with RecursiveCharacterTextSplitter and build a retrieval chain that uses ChatDatabricks and a Databricks Vector Search retriever, all in Python. Which packages provide these components?
+    options:
+      - langchain-openai plus databricks-sdk
+      - langchain plus databricks-langchain
+      - llama-index plus mlflow-skinny
+      - pytesseract plus databricks-connect
+    answer: [B]
+    explain: Text splitters and chain building blocks come from LangChain, and databricks-langchain provides ChatDatabricks and the Vector Search retriever integration.
+
+  - id: fa-14
+    section: d3
+    objective: Qualitatively assess responses to identify common issues such as quality and safety
+    q: A Generative AI Engineer reviews sampled responses from an internal IT assistant. The answers are correct, but some include an employee's mobile number and an internal admin URL copied verbatim from retrieved tickets. What issue is this, and what is the best fix?
+    options:
+      - 'A relevance issue: add a re-ranker so these ticket chunks rank lower'
+      - 'A formatting issue: add an output parser that strips links from answers'
+      - 'Privacy: mask PII in the source corpus and add an output PII guardrail'
+      - 'A hallucination issue: instruct the model to use only the retrieved context'
+    answer: [C]
+    explain: The model is faithfully repeating sensitive data that is in the sources, so the problem is privacy, not grounding. Fix it at the source and add an output guardrail as a safety net.
+
+  - id: fa-15
+    section: d3
+    objective: Select chunking strategy based on model & retrieval evaluation
+    q: 'A Generative AI Engineer evaluated three chunking strategies on the same 150-question set. The embedding model''s context is 512 tokens.
+
+  - Fixed 256 tokens: Recall@5 0.71, answer correctness 0.68
+
+  - Header-based sections (~400 tokens): Recall@5 0.86, answer correctness 0.81
+
+  - Fixed 1,024 tokens: Recall@5 0.79, answer correctness 0.74
+
+  Which strategy should they choose?'
+    options:
+      - Fixed 256 tokens, because smaller chunks are more precise
+      - Header-based sections
+      - Fixed 1,024 tokens, because larger chunks carry more context
+      - All three indexes, merging their results at query time
+    answer: [B]
+    explain: Header-based chunking scores best on both retrieval and answers, and it fits the embedding window. 1,024-token chunks are truncated by the 512-token model, which partly explains their lower scores.
+
+  - id: fa-16
+    section: d3
+    objective: Augment a prompt with additional context from a user's input based on key fields, terms, and intents
+    q: 'A Generative AI Engineer is building a travel assistant. A logged-in employee asks: "Can I expense a business-class flight to Tokyo next week?" The policy differs by employee level and home region, both of which are in the employee''s profile. How should the prompt be augmented?'
+    options:
+      - Pass the question as it is and let the LLM assume the most common employee level
+      - Use the profile's level and region in the retrieval filter and the prompt
+      - Ask the employee to state their level and region in every question they send
+      - Retrieve the travel policies for every level and region and let the LLM choose the right one
+    answer: [B]
+    explain: Key fields known from the user's context should drive both retrieval (filters) and the prompt, so the answer uses exactly the right policy. Asking the user or retrieving everything adds friction or noise.
+
+  - id: fa-17
+    section: d3
+    objective: Create a prompt that adjusts an LLM's response from a baseline to a desired output
+    q: A Generative AI Engineer's support assistant answers complaints accurately, but each answer opens with a long apology and ends with a marketing offer. The desired output is two sentences that acknowledge the issue and state the fix, with no marketing. Which change is most effective?
+    options:
+      - Set max_tokens to 60 so that the answers can't include the apology and the offer
+      - Lower the temperature to 0 so that the answers become shorter and more direct
+      - Add explicit format instructions (two sentences, no promotions) and one example
+      - Fine-tune the model on 50 examples of short answers before changing the prompt
+    answer: [C]
+    explain: Explicit format and content constraints with an example move the baseline to the desired output. Temperature doesn't remove content, max_tokens truncates mid-sentence, and fine-tuning is premature.
+
+  - id: fa-18
+    section: d3
+    objective: Implement LLM guardrails to prevent negative outcomes
+    q: An internal HR assistant should only answer HR questions. Users keep asking it to write code and marketing copy, which wastes tokens. Which guardrail prevents this most reliably?
+    options:
+      - Add a sentence to the system prompt asking users to stay on HR topics
+      - A topic check on each request that rejects off-topic ones
+      - Set a rate limit of 5 queries per minute for each user
+      - Mask PII in all responses with an output guardrail on the endpoint
+    answer: [B]
+    explain: An input topic check stops off-topic requests before they cost tokens. A prompt request is easy to ignore, PII masking doesn't address topics, and rate limits only slow the problem down.
+
+  - id: fa-19
+    section: d3
+    objective: Select the best LLM based on the attributes of the application to be developed
+    q: A Generative AI Engineer wants an application that turns a manager's plain-language request ("total sales by region last quarter") into a query against a known table schema. With which task category should they evaluate candidate LLMs?
+    options:
+      - Text-to-SQL (code generation)
+      - Extractive question answering
+      - Summarization
+      - Text classification
+    answer: [A]
+    explain: Translating natural language into a query over a schema is text-to-SQL, a code-generation task. Genie spaces are built on the same capability.
+
+  - id: fa-20
+    section: d3
+    objective: Select an embedding model context length based on source documents, expected queries, and optimization strategy
+    q: A Generative AI Engineer's documents are chunked to at most 2,000 tokens. Cost and latency matter, but chunks must not be truncated. Which embedding model should they choose?
+    options:
+      - 'context length 8192: smallest model is 2.2GB and embedding dimension 1024'
+      - 'context length 512: smallest model is 0.13GB and embedding dimension 384'
+      - 'context length 32768: smallest model is 14GB and embedding dimension 4096'
+      - 'context length 2048: smallest model is 0.6GB and embedding dimension 768'
+    answer: [D]
+    explain: The 2048-token model is the smallest one that fits the 2,000-token chunks. The 512-token model truncates them, and the larger models add cost and latency with no benefit.
+
+  - id: fa-21
+    section: d3
+    objective: Select a model from a model hub or marketplace for a task based on model metadata/model cards
+    q: A Generative AI Engineer is choosing a model from a model hub to summarize German support tickets of up to 3,000 tokens in a commercial product. Which model card fits?
+    options:
+      - Multilingual including German, 8k-token context, license allows commercial use
+      - German only, 512-token context, license allows commercial use
+      - Multilingual including German, 8k-token context, research-only license
+      - English only, 8k-token context, Apache 2.0 license
+    answer: [A]
+    explain: The model must support German, fit 3,000-token tickets and allow commercial use. Each other card fails one of these constraints.
+
+  - id: fa-22
+    section: d3
+    objective: Select the best model for a given task based on common metrics generated in experiments
+    q: 'A Generative AI Engineer logged three candidate models in MLflow for a support Q&A task.
+
+  - Model X: correctness 0.88, groundedness 0.95, $4 per 1,000 requests
+
+  - Model Y: correctness 0.90, groundedness 0.81, $3 per 1,000 requests
+
+  - Model Z: correctness 0.86, groundedness 0.94, $1 per 1,000 requests
+
+  The requirement is correctness ≥ 0.85 and groundedness ≥ 0.90 at the lowest cost. Which model should they choose?'
+    options:
+      - None of the models meets the requirement
+      - Model Y
+      - Model Z
+      - Model X
+    answer: [C]
+    explain: X and Z meet both thresholds, and Z is cheaper. Y fails the groundedness threshold despite the best correctness.
+
+  - id: fa-23
+    section: d3
+    objective: Utilize MLflow and Agent Framework for developing agentic systems
+    q: A Generative AI Engineer has written a LangGraph agent in agent.py and wants to deploy it with Mosaic AI Agent Framework so that it is traced and gets a Review App. Which TWO steps are required?
+    options:
+      - Register the logged model to Unity Catalog and deploy it with agents.deploy()
+      - Pickle the compiled graph and upload the file to a Unity Catalog volume for serving
+      - Create a Databricks job that runs agent.py on a schedule
+      - Convert the graph into a Spark UDF and call it from SQL
+      - Wrap it in ResponsesAgent and log it from code with mlflow.pyfunc.log_model(python_model="agent.py", resources=[...])
+    answer: [A, E]
+    explain: 'Agent Framework deploys MLflow-logged agents: wrap in ResponsesAgent, log from code with the resources it uses, register to Unity Catalog, then agents.deploy() creates the endpoint, Review App and tracing.'
+
+  - id: fa-24
+    section: d3
+    objective: Compare the evaluation and monitoring phases of the Gen AI application life cycle
+    q: Before launch, a Generative AI Engineer scored an agent with the Correctness judge against expected answers. After launch, they need ongoing quality tracking on live traffic. What should change?
+    options:
+      - Use judges that don't need ground truth, such as Safety and RetrievalGroundedness, on sampled live traces
+      - Re-run the pre-launch evaluation dataset every day and treat it as the monitoring signal
+      - Keep running the Correctness judge on all live traffic, using the agent's own answers as expectations
+      - Stop LLM-based scoring in production, since monitoring only tracks latency and error rate
+    answer: [A]
+    explain: Live traffic has no expected answers, so monitoring uses judges that don't need ground truth, applied to a sample. Using the agent's own answers as expectations is circular, and the fixed dataset doesn't reflect real traffic.
+
+  - id: fa-25
+    section: d3
+    objective: Enable multi-agent systems to leverage Genie Spaces or conversational API to retrieve data
+    q: A Generative AI Engineer deploys a multi-agent system in which one sub-agent queries a Genie space. In production the Genie sub-agent fails with permission errors. Which permissions does the identity the agent runs as need?
+    options:
+      - CAN QUERY on a Model Serving endpoint that is created for the Genie space
+      - Access to the Genie space, CAN USE on its SQL warehouse, and SELECT on the underlying tables
+      - SELECT on the underlying tables only, because the Genie space is just a saved configuration
+      - CAN MANAGE on the Genie space only, because Genie runs the SQL on its own behalf
+    answer: [B]
+    explain: Genie runs SQL on a warehouse against UC tables, so the caller needs access to the space, permission to use the warehouse, and read access to the data.
+
+  - id: fa-26
+    section: d3
+    objective: Select the best LLM based on the attributes of the application to be developed
+    q: A Generative AI Engineer must build an assistant that answers questions about photographed insurance claim forms, including handwritten checkboxes. Which model attribute is essential?
+    options:
+      - Vision (image input) support
+      - A small text-only model fine-tuned on claims
+      - The largest available text-only context window
+      - An embedding model with high dimension
+    answer: [A]
+    explain: The input is an image, so the model must accept images (a multimodal model). Text-only models can't read the form without a separate OCR step, which would also lose the checkboxes.
+
+  - id: fa-27
+    section: d4
+    objective: Code a chain using a pyfunc model with pre- and post-processing
+    q: A Generative AI Engineer is writing a custom mlflow.pyfunc model. Each request contains a question and the user's department. The chain must add the department to the prompt, call the LLM, and remove the "Answer:" prefix that the model adds. Where should this logic go?
+    options:
+      - 'In load_context(): build one prompt per department when the model loads'
+      - In the input_example, by including the prefix so that MLflow removes it
+      - In the model signature, by declaring department as an optional input column
+      - 'In predict(): build the prompt, call the LLM, strip the prefix'
+    answer: [D]
+    explain: Per-request pre- and post-processing belongs in predict(). load_context() runs once at load time, and the signature and input example only describe the schema.
+
+  - id: fa-28
+    section: d4
+    objective: Control access to resources from model serving endpoints
+    q: A Generative AI Engineer deploys a RAG agent to Model Serving. It queries a Vector Search index and calls a Unity Catalog function, and every user should get the same data. The team wants least privilege and no long-lived secrets. What should they do?
+    options:
+      - Store a service principal's personal access token in Databricks Secrets and read it in the agent
+      - Grant all account users SELECT on the index and EXECUTE on the function
+      - Declare the index and function as resources when logging the agent
+      - Use on-behalf-of-user authentication so that each user's own permissions are applied to every call
+    answer: [C]
+    explain: Declared resources let Databricks issue short-lived, least-privilege credentials automatically. OBO is for per-user permissions, which aren't required here, and stored tokens or broad grants violate the constraints.
+
+  - id: fa-29
+    section: d4
+    objective: Register the model to Unity Catalog using MLflow
+    q: A Generative AI Engineer has logged a new agent version and wants the serving endpoint configuration to follow whichever version is marked as the production one, with instant rollback. Which approach is correct?
+    options:
+      - Register it to Unity Catalog and rename the model each time a new version goes to production
+      - Register it to catalog.schema.model in Unity Catalog and point the @champion alias at the new version
+      - Register it to the workspace registry and transition the version to the Production stage
+      - Register it to Unity Catalog and delete the older versions so only the newest can be served
+    answer: [B]
+    explain: Unity Catalog models use aliases instead of stages. Moving the alias promotes a version, and moving it back is an instant rollback.
+
+  - id: fa-30
+    section: d4
+    objective: Create and query a Vector Search index
+    q: A Generative AI Engineer queries a Delta Sync index with managed embeddings. They need the 5 most similar chunks for a text question, restricted to rows where product is X200. Which call is correct?
+    options:
+      - 'vsc.create_delta_sync_index(query_text=q, filters={"product": "X200"}, num_results=5)'
+      - index.similarity_search(query_text=q, columns=["chunk_id", "text"], num_results=5), then filter the result on product
+      - 'index.similarity_search(query_text=q, columns=["chunk_id", "text"], filters={"product": "X200"}, num_results=5)'
+      - index.similarity_search(query_text=q, columns=["product"], num_results=5) with product="X200" in the query text
+    answer: [C]
+    explain: Metadata filters are applied during the search, so you get 5 matching results. Filtering afterwards can return fewer than 5, putting the filter in the query text isn't enforced, and create_delta_sync_index creates indexes rather than querying them.
+
+  - id: fa-31
+    section: d4
+    objective: Identify how to serve an LLM application that leverages Foundation Model APIs
+    q: A Generative AI Engineer's agent code calls a Foundation Model API chat model. Which client code calls the endpoint from Python with the least custom code?
+    options:
+      - spark.sql("SELECT * FROM `databricks-meta-llama-3-3-70b-instruct` WHERE prompt = ...")
+      - dbutils.serving.chat("databricks-meta-llama-3-3-70b-instruct", msgs)
+      - 'requests.post("https://api.openai.com/v1/chat/completions", json={"model": "databricks-meta-llama-3-3-70b-instruct", "messages": msgs})'
+      - WorkspaceClient().serving_endpoints.get_open_ai_client().chat.completions.create(model="databricks-meta-llama-3-3-70b-instruct", messages=msgs)
+    answer: [D]
+    explain: Foundation Model APIs are OpenAI-compatible, so the OpenAI client from WorkspaceClient works with Databricks authentication. The model isn't hosted on api.openai.com, it isn't a table, and dbutils has no serving module.
+
+  - id: fa-32
+    section: d4
+    objective: Explain the key concepts and components of Mosaic AI Vector Search
+    q: A Generative AI Engineer is creating a Delta Sync index with Databricks-managed embeddings. Which TWO are required?
+    options:
+      - A job that upserts vectors through the REST API
+      - A precomputed embedding vector column in the source table
+      - A source Delta table with Change Data Feed enabled and a primary key column
+      - An embedding model endpoint and a text column to embed
+      - A SQL warehouse that runs the sync
+    answer: [C, D]
+    explain: Managed embeddings need a CDF-enabled source table with a primary key, a text column and an embedding endpoint. A vector column is for self-managed embeddings, and REST upserts are for Direct Vector Access.
+
+  - id: fa-33
+    section: d4
+    objective: Identify batch inference workloads and apply ai_query() appropriately
+    q: A Generative AI Engineer must classify 20 million support tickets every night, and a few bad rows must not fail the whole job. Which SQL is the best fit?
+    options:
+      - 'SELECT id, ai_query(''databricks-meta-llama-3-3-70b-instruct'', CONCAT(''Classify: '', body), failOnError => false) FROM tickets'
+      - SELECT id, vector_search('databricks-meta-llama-3-3-70b-instruct', body) FROM tickets
+      - SELECT id, ai_query('databricks-meta-llama-3-3-70b-instruct') FROM tickets WHERE body IS NOT NULL
+      - SELECT ai_query(tickets, 'Classify each ticket body') FROM tickets
+    answer: [A]
+    explain: ai_query takes the endpoint name and a per-row prompt, and failOnError => false returns errors per row. The other statements have no prompt, pass a table instead of a prompt, or call the wrong function.
+
+  - id: fa-34
+    section: d4
+    objective: Configure vector search for a particular solution based on number of embeddings, update frequency, latency, and cost requirements
+    q: A Generative AI Engineer is building a legal research tool over 900 million chunks. Documents are updated monthly, traffic is about 5 queries per second, users accept about one second of latency, and cost must be minimized. How should they set up Vector Search?
+    options:
+      - Storage-optimized endpoint, triggered Delta Sync
+      - Direct Vector Access on a standard endpoint
+      - Standard endpoint, triggered Delta Sync
+      - Standard endpoint, continuous Delta Sync
+    answer: [A]
+    explain: Near a billion vectors, low QPS, relaxed latency and cost pressure point to storage-optimized. Monthly updates only need triggered sync. A standard endpoint at this scale costs more, and continuous sync is wasted on monthly changes.
+
+  - id: fa-35
+    section: d4
+    objective: Configure a persistent datastore to store and retrieve intermediate memory or structured information
+    q: A Generative AI Engineer is building an onboarding agent that pauses for hours while it waits for a manager's approval. It must resume exactly where it stopped, even if the serving endpoint restarts in between. What should store the agent's state?
+    options:
+      - A LangGraph checkpointer on Lakebase
+      - The serving container's in-memory state
+      - A Vector Search index keyed by user id
+      - The MLflow trace of the paused request
+    answer: [A]
+    explain: A durable checkpointer on Lakebase (managed Postgres) saves graph state per thread, so the run can resume after restarts. Memory is lost on restart, traces are for observability, and an index is for similarity search.
+
+  - id: fa-36
+    section: d4
+    objective: Apply CI/CD best practices such as updating a Vector Search index, promoting prompts across environments, and testing individual components of an agent
+    q: A Generative AI Engineer's agent has a retriever, a SQL tool and an output formatter. In the last release, a prompt change broke the formatter's output and nobody noticed until production. Which CI setup catches this earliest?
+    options:
+      - Only an end-to-end mlflow.genai.evaluate() run in staging, after each deployment has finished
+      - Manual conversations with the agent in the Review App before each release
+      - Production monitoring, with a rollback by alias whenever quality scores drop
+      - Component unit tests plus an evaluate() gate on a fixed dataset
+    answer: [D]
+    explain: Testing components individually catches a broken formatter before deployment, and a fixed evaluation set guards overall quality. The other options catch problems later or not reliably.
+
+  - id: fa-37
+    section: d5
+    objective: Use masking techniques as guard rails to meet a performance objective
+    q: A Generative AI Engineer builds a call-center summarizer. QA reviewers must be able to see that the caller's identity was verified (for example, "customer confirmed date of birth"), but dates of birth and card numbers must not appear in summaries. Which approach meets both goals?
+    options:
+      - Summarize the raw text and instruct the model to leave personal data out
+      - Typed placeholders such as [DOB] and [CARD] before summarizing
+      - Delete every sentence in the transcript that contains personal data
+      - Block the summary entirely whenever personal data is detected
+    answer: [B]
+    explain: Typed placeholders remove the sensitive values but keep the fact that verification happened, so summaries stay useful. Deleting or blocking loses the information, and instructions alone aren't reliable.
+
+  - id: fa-38
+    section: d5
+    objective: Select guardrail techniques to protect against malicious user inputs to a Gen AI application
+    q: A Generative AI Engineer is building a public-facing agent with a send_email tool. Attackers try to trick it into sending emails to arbitrary addresses. Which TWO measures protect against this best?
+    options:
+      - Log every tool call and review the logs once a week
+      - Restrict recipients to an allow-list of domains, enforced inside the tool code
+      - Require the user to confirm each email before it is sent
+      - Add "never email external addresses" to the system prompt
+      - Raise the temperature so the attack prompts work less reliably
+    answer: [B, C]
+    explain: Hard limits in the tool and human confirmation hold even if the model is tricked. Prompt rules can be overridden by injection, temperature isn't a control, and weekly log review only finds abuse afterwards.
+
+  - id: fa-39
+    section: d5
+    objective: Use legal/licensing requirements for data sources to avoid legal risk
+    q: A Generative AI Engineer wants to index a news publisher's articles, scraped from its website, for a paid customer-facing assistant. The website's terms of service prohibit automated scraping and commercial reuse. What should the engineer do?
+    options:
+      - Use the articles after summarizing them with an LLM, so the text isn't copied
+      - Use the articles for retrieval only, because the LLM is not trained on them
+      - Not use them; license the content or use other, permitted sources
+      - Use the articles, as long as every answer links back to the original article
+    answer: [C]
+    explain: The terms of service forbid both the collection and the commercial use. Links, retrieval-only use or summarizing don't change that, so a license or another source is needed.
+
+  - id: fa-40
+    section: d5
+    objective: Recommend an alternative for problematic text mitigation in a data source feeding a GenAI application
+    q: A Generative AI Engineer wants to use three years of support chat logs as a RAG source. The resolutions are valuable, but the logs also contain customer insults and agents' internal jokes about customers. What should they recommend?
+    options:
+      - Fine-tune the LLM on the raw logs so that it learns the resolutions directly
+      - Index the logs as they are and rely on an output toxicity guardrail on the endpoint
+      - Extract only the resolution steps into a cleaned, reviewed corpus and index it
+      - Drop all of the chat logs and rely only on the official documentation
+    answer: [C]
+    explain: Transforming the source into clean resolution content keeps the value and removes the problematic text before it can be retrieved. Output filtering alone leaves it in the index, dropping everything loses the knowledge, and fine-tuning on raw logs bakes the text in.
+
+  - id: fa-41
+    section: d6
+    objective: Select an LLM choice (size and architecture) based on a set of quantitative evaluation metrics
+    q: 'A Generative AI Engineer evaluated three models on the same dataset.
+
+  - 8B dense: correctness 0.79, p95 latency 0.5 s, low cost
+
+  - 70B dense: correctness 0.90, p95 latency 2.8 s, high cost
+
+  - Mixture-of-Experts, 47B total / 13B active: correctness 0.89, p95 latency 1.1 s, medium cost
+
+  The requirement is correctness ≥ 0.85 and p95 latency under 1.5 s. Which model should they choose?'
+    options:
+      - The 70B dense model
+      - The Mixture-of-Experts model
+      - None of the three models
+      - The 8B dense model
+    answer: [B]
+    explain: Only the MoE model meets both requirements. Activating 13B parameters per token keeps it fast while its total capacity keeps quality high.
+
+  - id: fa-42
+    section: d6
+    objective: Select key metrics to monitor for a specific LLM deployment scenario
+    q: A Generative AI Engineer runs an internal RAG assistant for engineers. The main risk is answers that aren't supported by the documentation. Which TWO metrics should they monitor on live traffic?
+    options:
+      - The number of index versions per week
+      - BLEU against reference answers
+      - RetrievalRelevance of the retrieved chunks
+      - GPU utilization of the embedding model's serving endpoint
+      - RetrievalGroundedness of responses on sampled traces
+    answer: [C, E]
+    explain: Groundedness shows whether answers are supported by what was retrieved, and retrieval relevance shows whether the right context was found. Neither needs ground truth. BLEU needs references, and the infrastructure counts don't measure quality.
+
+  - id: fa-43
+    section: d6
+    objective: Evaluate agent performance using MLflow scoring and tracing
+    q: A Generative AI Engineer runs mlflow.genai.evaluate() and sees low RelevanceToQuery scores for 12% of the rows. What is the best next step to find the cause?
+    options:
+      - Open the traces for those rows and inspect retrieval, tools and prompt
+      - Re-run the evaluation with a larger judge model to confirm the scores
+      - Check the serving endpoint's CPU and memory metrics for those requests
+      - Add more rows to the evaluation dataset until the share of low scores drops
+    answer: [A]
+    explain: Traces show what happened at each step, so you can see whether retrieval, a tool or the prompt caused the irrelevant answer. The other options don't explain the failures.
+
+  - id: fa-44
+    section: d6
+    objective: Use inference logging to assess deployed RAG application performance
+    q: A Generative AI Engineer finds in the endpoint's inference table that many recent requests were answered with "I don't know." What should they do next?
+    options:
+      - Switch to a larger LLM that can answer from its general knowledge
+      - Check, by topic, whether the retrieved chunks contained the answer
+      - Remove the "say you don't know" instruction from the system prompt
+      - Lower the temperature so the model answers with more confidence
+    answer: [B]
+    explain: The logged requests show whether the knowledge is missing from the sources or retrieval failed to find it, which tells you what to fix. Removing the fallback or relying on general knowledge invites hallucinations.
+
+  - id: fa-45
+    section: d6
+    objective: Identify evaluation judges that require ground truth
+    q: A Generative AI Engineer has no labeled answers yet for a new agent. Which built-in judge can they NOT use until they add expectations to the evaluation dataset?
+    options:
+      - RetrievalGroundedness
+      - Correctness
+      - RelevanceToQuery
+      - Safety
+    answer: [B]
+    explain: Correctness compares the response with expected facts or an expected response. Safety, RelevanceToQuery and RetrievalGroundedness work without ground truth.
